@@ -48,6 +48,8 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         num_commands = 3
         traj_time = [1, 3]
         hold_time = [0.5, 2]
+        # traj_time = [10,20] 
+        # hold_time = [2,3] 
         collision_upper_limits = [0.3, 0.15, 0.05 - 0.165]
         collision_lower_limits = [-0.2, -0.15, -0.35 - 0.165]
         underground_limit = -0.57
@@ -126,7 +128,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 10 # episode length in seconds
+        episode_length_s = 20 #10 # episode length in seconds
 
         reorder_dofs = True
 
@@ -187,7 +189,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         randomize_base_mass = True
         added_mass_range = [-0.001, 0.050]
         box_env_origins_x = 0
-        box_env_origins_y_range = [0.1, 0.3]
+        box_env_origins_y_range =  [2, 3] # [0.1, 0.3]
         box_env_origins_z = box_size / 2 + 0.16
         box_pos_obs_range = 1.0
     
@@ -282,38 +284,38 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
     
     class termination:
-        r_threshold = 0.78
-        p_threshold = 0.60
-        z_threshold = 0.325
+        r_threshold = 1.2 #0.78
+        p_threshold = 1.0 #0.60
+        z_threshold = 0.2 #0.325
 
     # Was Overriding terrain 
-    # class terrain:
-    #     mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
-    #     add_slopes = True
-    #     slope_incline = 0.2
-    #     horizontal_scale = 0.05 # 0.025 # [m]
-    #     vertical_scale = 0.001 #1 / 100000 # [m]
-    #     border_size = 0 # [m]
-    #     tot_cols = 600
-    #     tot_rows = 600
-    #     zScale = 0.15
-    #     transform_x = - tot_cols * horizontal_scale / 2
-    #     transform_y = - tot_rows * horizontal_scale / 2
-    #     transform_z = 0.0
+    class terrain:
+        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        add_slopes = True
+        slope_incline = 0.2
+        horizontal_scale = 0.05 # 0.025 # [m]
+        vertical_scale = 0.001 #1 / 100000 # [m]
+        border_size = 0 # [m]
+        tot_cols = 600
+        tot_rows = 600
+        zScale = 0.15
+        transform_x = - tot_cols * horizontal_scale / 2
+        transform_y = - tot_rows * horizontal_scale / 2
+        transform_z = 0.0
 
-    #     curriculum = False
-    #     static_friction = 1.0
-    #     dynamic_friction = 1.0
-    #     restitution = 0.0
-    #     # rough terrain only:
-    #     measure_heights = False
-    #     measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
-    #     measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-    #     # trimesh only:
-    #     slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
+        curriculum = False
+        static_friction = 1.0
+        dynamic_friction = 1.0
+        restitution = 0.0
+        # rough terrain only:
+        measure_heights = False
+        measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+        # trimesh only:
+        slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
 
-    #     origin_perturb_range = 0.5
-    #     init_vel_perturb_range = 0.1
+        origin_perturb_range = 0.5
+        init_vel_perturb_range = 0.1
 
 
 class WidowGo1RoughCfgPPO(LeggedRobotCfgPPO):

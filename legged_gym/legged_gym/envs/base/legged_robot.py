@@ -618,8 +618,20 @@ class LeggedRobot(BaseTask):
         hf_params.dynamic_friction = self.cfg.terrain.dynamic_friction
         hf_params.restitution = self.cfg.terrain.restitution
 
-        self.gym.add_heightfield(self.sim, self.terrain.heightsamples, hf_params)
-        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
+        heights = self.terrain.heightsamples
+        if isinstance(heights, torch.Tensor):
+            heights = heights.detach().cpu().numpy()
+        height_1d = np.ascontiguousarray(heights.reshape(-1)).astype(np.int16, copy=False)
+
+        # 안전 체크
+        assert height_1d.ndim == 1
+        assert height_1d.size == hf_params.nbRows * hf_params.nbColumns, \
+            f"{height_1d.size=} != {hf_params.nbRows * hf_params.nbColumns=}"
+
+        self.gym.add_heightfield(self.sim, height_1d, hf_params)
+        self.height_samples = torch.as_tensor(self.terrain.heightsamples, device=self.device).view(self.terrain.tot_rows, self.terrain.tot_cols)
+        # self.gym.add_heightfield(self.sim, self.terrain.heightsamples, hf_params)
+        # self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
 
 
     def _create_trimesh(self):

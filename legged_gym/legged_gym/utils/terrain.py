@@ -118,7 +118,7 @@ class Terrain:
 
         self.border = int(cfg.border_size/self.cfg.horizontal_scale)  # 25 / 0.1 => 250
         self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border # 10*80 + 2*250 800+500 => 1300
-        self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border 
+        self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border #20*80 + 2*250 => 2100
 
         self.height_field_raw = np.zeros((self.tot_rows , self.tot_cols), dtype=np.int16)
         if cfg.curriculum:
