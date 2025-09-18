@@ -113,12 +113,12 @@ class Terrain:
         self.cfg.num_sub_terrains = cfg.num_rows * cfg.num_cols
         self.env_origins = np.zeros((cfg.num_rows, cfg.num_cols, 3))
 
-        self.width_per_env_pixels = int(self.env_width / cfg.horizontal_scale)
-        self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale)
+        self.width_per_env_pixels = int(self.env_width / cfg.horizontal_scale) # 8/0.1 => 80
+        self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale) # 8/0.1 => 80
 
-        self.border = int(cfg.border_size/self.cfg.horizontal_scale)
-        self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border
-        self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border
+        self.border = int(cfg.border_size/self.cfg.horizontal_scale)  # 25 / 0.1 => 250
+        self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border # 10*80 + 2*250 800+500 => 1300
+        self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border 
 
         self.height_field_raw = np.zeros((self.tot_rows , self.tot_cols), dtype=np.int16)
         if cfg.curriculum:

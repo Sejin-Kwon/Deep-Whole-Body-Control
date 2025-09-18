@@ -40,6 +40,7 @@ from rsl_rl.runners import OnPolicyRunner
 from legged_gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 from .helpers import get_args, update_cfg_from_args, class_to_dict, get_load_path, set_seed, parse_sim_params
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from legged_gym.envs.widowGo1.widowGo1_config import WidowGo1RoughCfg, WidowGo1RoughCfgPPO
 from .logger import log_files
 
 class TaskRegistry():
@@ -156,6 +157,7 @@ class TaskRegistry():
 
         #save resume path before creating a new log_dir
         resume = train_cfg.runner.resume
+        resume = False
         if resume:
             # load previously trained model
             resume_path = get_load_path(log_root, load_run=train_cfg.runner.load_run, checkpoint=train_cfg.runner.checkpoint)

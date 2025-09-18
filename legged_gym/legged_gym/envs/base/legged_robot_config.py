@@ -41,16 +41,16 @@ class LeggedRobotCfg(BaseConfig):
         episode_length_s = 20 # episode length in seconds
 
     class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'heightfield' # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
-        curriculum = True
+        curriculum = False
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
         # rough terrain only:
-        measure_heights = True
+        measure_heights = False
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         selected = False # select a unique terrain type and pass all arguments
@@ -64,6 +64,38 @@ class LeggedRobotCfg(BaseConfig):
         terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
+
+        ##################### for the terrain test ##################### 
+        # mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        add_slopes = True
+        slope_incline = 0.2
+        # horizontal_scale = 0.05 # 0.025 # [m]
+        # vertical_scale = 0.001 #1 / 100000 # [m]
+        # border_size = 0 # [m]
+        # tot_cols = 600
+        # tot_rows = 600
+        # tot_cols = 10
+        # tot_rows = 20
+        # zScale = 0.15
+        # transform_x = - tot_cols * horizontal_scale / 2
+        # transform_y = - tot_rows * horizontal_scale / 2
+        # transform_z = 0.0
+
+        # curriculum = False
+        # static_friction = 1.0
+        # dynamic_friction = 1.0
+        # restitution = 0.0
+        # rough terrain only:
+        # measure_heights = False
+        # measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+        # measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+        # trimesh only:
+        # slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
+
+        origin_perturb_range = 0.5
+        init_vel_perturb_range = 0.1
+
+
 
     class commands:
         curriculum = False

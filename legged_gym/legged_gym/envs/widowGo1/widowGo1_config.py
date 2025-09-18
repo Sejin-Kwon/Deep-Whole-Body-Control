@@ -32,7 +32,7 @@ from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobot
 import numpy as np
 import torch
 
-RESUME = True
+RESUME = False
 
 class WidowGo1RoughCfg( LeggedRobotCfg ):
     # class target_ee:
@@ -57,7 +57,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         l_schedule = [0, 1]
         p_schedule = [0, 1]
         y_schedule = [0, 1]
-        # arm_action_scale_schedule = [0, 1]
+        arm_action_scale_schedule = [0, 1]
         tracking_ee_reward_schedule = [0, 1]
         
         class ranges:
@@ -237,7 +237,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             ang_vel_xy = -0.
             orientation = -0.
             torques = 0
-            energy_square = -6e-5
+            energy_square = -6e-5    # energy_square
             dof_vel = 0
             dof_acc = -0
             base_height = 0
@@ -246,13 +246,13 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             feet_stumble = -0 
             action_rate = -0
             stand_still = 0
-            survive = 0.2
+            survive = 0.2             # Alive - survive 
             leg_energy = -0
             leg_energy_abs_sum = -0
-            tracking_lin_vel_x_l1 = 0.5
+            tracking_lin_vel_x_l1 = 0.5   # tracking_lin_vel_x_l1
             tracking_lin_vel_x_exp = 0.
-            tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1
-            tracking_ang_vel_yaw_exp = 0.15  #check final_tracking_ang_vel_yaw_exp
+            tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1  
+            tracking_ang_vel_yaw_exp = 0.15  #check final_tracking_ang_vel_yaw_exp  # tracking_ang_vel_yaw_exp 
             tracking_lin_vel_y_l2 = 0
             tracking_lin_vel_z_l2 = -0.0
             leg_action_l2 = -0.0
@@ -260,10 +260,10 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             foot_contacts_z = -1e-4
         class arm_scales:
             termination = -0.0
-            tracking_ee_sphere = 0.55
+            tracking_ee_sphere = 0.55  # tracking_ee_sphere
             tracking_ee_cart = 0.0
             arm_orientation = -0.
-            arm_energy_abs_sum = -0.0040
+            arm_energy_abs_sum = -0.0040   # arm_energy_abs_sum 
             tracking_ee_orn = 0.
             tracking_ee_orn_ry = 0.
         
@@ -286,33 +286,34 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         p_threshold = 0.60
         z_threshold = 0.325
 
-    class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
-        add_slopes = True
-        slope_incline = 0.2
-        horizontal_scale = 0.025 # [m]
-        vertical_scale = 1 / 100000 # [m]
-        border_size = 0 # [m]
-        tot_cols = 600
-        tot_rows = 10000
-        zScale = 0.15
-        transform_x = - tot_cols * horizontal_scale / 2
-        transform_y = - tot_rows * horizontal_scale / 2
-        transform_z = 0.0
+    # Was Overriding terrain 
+    # class terrain:
+    #     mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+    #     add_slopes = True
+    #     slope_incline = 0.2
+    #     horizontal_scale = 0.05 # 0.025 # [m]
+    #     vertical_scale = 0.001 #1 / 100000 # [m]
+    #     border_size = 0 # [m]
+    #     tot_cols = 600
+    #     tot_rows = 600
+    #     zScale = 0.15
+    #     transform_x = - tot_cols * horizontal_scale / 2
+    #     transform_y = - tot_rows * horizontal_scale / 2
+    #     transform_z = 0.0
 
-        curriculum = False
-        static_friction = 1.0
-        dynamic_friction = 1.0
-        restitution = 0.0
-        # rough terrain only:
-        measure_heights = False
-        measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
-        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-        # trimesh only:
-        slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
+    #     curriculum = False
+    #     static_friction = 1.0
+    #     dynamic_friction = 1.0
+    #     restitution = 0.0
+    #     # rough terrain only:
+    #     measure_heights = False
+    #     measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+    #     measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+    #     # trimesh only:
+    #     slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
 
-        origin_perturb_range = 0.5
-        init_vel_perturb_range = 0.1
+    #     origin_perturb_range = 0.5
+    #     init_vel_perturb_range = 0.1
 
 
 class WidowGo1RoughCfgPPO(LeggedRobotCfgPPO):

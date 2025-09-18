@@ -230,28 +230,48 @@ class WidowGo1(LeggedRobot):
     def create_sim(self):
         """ Creates simulation, terrain and evironments
         """
+        ''' origin Deep whole body widowGo1 instance code
         self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
         self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.terrain = Terrain_Perlin(self.cfg.terrain)
         self._create_trimesh()
         self._create_envs()
+        '''
+
+        #### below code from legged_robot.py -> LeggedRobot 's create_sim(self):
+        self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
+        self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+        mesh_type = self.cfg.terrain.mesh_type
+        if mesh_type in ['heightfield', 'trimesh']:
+            self.terrain = Terrain(self.cfg.terrain, self.num_envs)
+        if mesh_type=='plane':
+            self._create_ground_plane()
+        elif mesh_type=='heightfield':
+            self._create_heightfield()
+        elif mesh_type=='trimesh':
+            self._create_trimesh()
+        elif mesh_type is not None:
+            raise ValueError("Terrain mesh type not recognised. Allowed types are [None, plane, heightfield, trimesh]")
+        self._create_envs()
     
-    def _create_trimesh(self):
-        """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
-        # """
-        tm_params = gymapi.TriangleMeshParams()
-        tm_params.nb_vertices = self.terrain.vertices.shape[0]
-        tm_params.nb_triangles = self.terrain.triangles.shape[0]
+    ''' origin Deep whole body widowGo1 instance code
+    # def _create_trimesh(self):
+    #     """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
+    #     # """
+    #     tm_params = gymapi.TriangleMeshParams()
+    #     tm_params.nb_vertices = self.terrain.vertices.shape[0]
+    #     tm_params.nb_triangles = self.terrain.triangles.shape[0]
 
-        tm_params.transform.p.x = self.cfg.terrain.transform_x
-        tm_params.transform.p.y = self.cfg.terrain.transform_y
-        tm_params.transform.p.z = self.cfg.terrain.transform_z
-        tm_params.static_friction = self.cfg.terrain.static_friction
-        tm_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        tm_params.restitution = self.cfg.terrain.restitution
-        self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'), self.terrain.triangles.flatten(order='C'), tm_params)   
-        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
-
+    #     tm_params.transform.p.x = self.cfg.terrain.transform_x
+    #     tm_params.transform.p.y = self.cfg.terrain.transform_y
+    #     tm_params.transform.p.z = self.cfg.terrain.transform_z
+    #     tm_params.static_friction = self.cfg.terrain.static_friction
+    #     tm_params.dynamic_friction = self.cfg.terrain.dynamic_friction
+    #     tm_params.restitution = self.cfg.terrain.restitution
+    #     self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'), self.terrain.triangles.flatten(order='C'), tm_params)   
+    #     self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
+    '''
+    
     def _create_envs(self):
         """ Creates environments:
              1. loads the robot URDF/MJCF asset,
@@ -532,7 +552,7 @@ class WidowGo1(LeggedRobot):
         self.dof_vel_wo_gripper = self.dof_vel[:, :-2]
         self.base_quat = self.root_states[:, 3:7]
         # self.yaw_ema = euler_from_quat(self.base_quat)[2]
-        base_yaw = euler_from_quat(self.base_quat)[2]
+        base_yaw = euler_from_quat(self.base_quat)[:, 2]
         self.base_yaw_euler = torch.cat([torch.zeros(self.num_envs, 2, device=self.device), base_yaw.view(-1, 1)], dim=1)
         self.base_yaw_quat = quat_from_euler_xyz(torch.tensor(0), torch.tensor(0), base_yaw)
 
@@ -879,7 +899,7 @@ class WidowGo1(LeggedRobot):
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        base_yaw = euler_from_quat(self.base_quat)[2]
+        base_yaw = euler_from_quat(self.base_quat)[:,2]
         self.base_yaw_euler[:] = torch.cat([torch.zeros(self.num_envs, 2, device=self.device), base_yaw.view(-1, 1)], dim=1)
         self.base_yaw_quat[:] = quat_from_euler_xyz(torch.tensor(0), torch.tensor(0), base_yaw)
         # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
@@ -938,8 +958,11 @@ class WidowGo1(LeggedRobot):
         """ Check if environments need to be reset
         """
         termination_contact_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
-
-        r, p, _ = euler_from_quat(self.base_quat) 
+        euler = euler_from_quat(self.base_quat)
+        r = euler[:, 0]                      
+        p = euler[:, 1]
+        y = euler[:, 2]
+        # r, p, _ = euler_from_quat(self.base_quat) 
         z = self.root_states[:, 2]
 
         r_threshold_buff = ((r > 0.2) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -0.2) & (self.curr_ee_goal[:, 2] <= 0))
@@ -970,7 +993,7 @@ class WidowGo1(LeggedRobot):
         self.dof_pos_wrapped[:, -8] = torch_wrap_to_pi_minuspi(self.dof_pos_wrapped[:, -8])
         # self.dof_pos_wrapped[:, 12:] = 0
         # self.dof_vel[:, 12:] = 0
-        obs_buf = torch.cat((       self.get_body_orientation(),  # dim 2
+        obs_buf = torch.cat((       self.get_body_orientation(),  # dim 2 (body roll, pitch)
                                     self.base_ang_vel * self.obs_scales.ang_vel,  # dim 3
                                     self.ig2raisim((self.dof_pos_wrapped - self.default_dof_pos) * self.obs_scales.dof_pos),  # dim 20
                                     self.ig2raisim(self.dof_vel * self.obs_scales.dof_vel),  # dim 20
@@ -1099,7 +1122,11 @@ class WidowGo1(LeggedRobot):
 
     
     def get_body_orientation(self, return_yaw=False):
-        r, p, y = euler_from_quat(self.base_quat)
+        euler = euler_from_quat(self.base_quat)
+        r = euler[:, 0]                           
+        p = euler[:, 1]
+        y = euler[:, 2]
+        # r, p, y = euler_from_quat(self.base_quat)
         body_angles = torch.stack([r, p, y], dim=-1)
 
         if not return_yaw:
@@ -1144,7 +1171,24 @@ class WidowGo1(LeggedRobot):
         for i in range(10):
             ee_target_cart = sphere2cart(ee_target_all_sphere[..., i])
             ee_target_all_cart_world[..., i] = quat_apply(self.base_yaw_quat, ee_target_cart)
-        ee_target_all_cart_world += torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)[:, :, None]
+
+
+        ####### 
+        if ee_target_all_cart_world.dim() == 2:
+            ee_target_all_cart_world = ee_target_all_cart_world.unsqueeze(0)  # (1, 3, T)
+
+
+        z_off = self.z_invariant_offset
+        if z_off.dim() == 1:
+            z_off = z_off.view(self.num_envs, 1)
+        elif z_off.shape[-1] != 1:
+            z_off = z_off[:, :1]
+
+        offset = torch.cat([self.root_states[:, :2], z_off], dim=1).unsqueeze(-1) 
+        ee_target_all_cart_world = ee_target_all_cart_world + offset 
+
+        ######  ee_target_all_cart_world += torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)[:, :, None]
+
         # curr_ee_goal_cart_world = quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart) + self.root_states[:, :3]
         for i in range(self.num_envs):
             for j in range(10):
