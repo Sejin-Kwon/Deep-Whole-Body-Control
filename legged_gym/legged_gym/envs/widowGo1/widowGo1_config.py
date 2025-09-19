@@ -290,7 +290,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
     # Was Overriding terrain 
     class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'plane' # "heightfield" # none, plane, heightfield or trimesh
         add_slopes = True
         slope_incline = 0.2
         horizontal_scale = 0.05 # 0.025 # [m]

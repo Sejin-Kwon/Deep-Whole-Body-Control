@@ -232,46 +232,46 @@ class WidowGo1(LeggedRobot):
         """ Creates simulation, terrain and evironments
         """
         ######### origin Deep whole body widowGo1 instance code
-        self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
-        self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
-        self.terrain = Terrain_Perlin(self.cfg.terrain)
-        self._create_trimesh()
-        self._create_envs()
+        # self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
+        # self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+        # self.terrain = Terrain_Perlin(self.cfg.terrain)
+        # self._create_trimesh()
+        # self._create_envs()
         ##############
 
         # #### below code from legged_robot.py -> LeggedRobot 's create_sim(self):
-        # self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
-        # self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
-        # mesh_type = self.cfg.terrain.mesh_type
-        # if mesh_type in ['heightfield', 'trimesh']:
-        #     self.terrain = Terrain(self.cfg.terrain, self.num_envs)
-        # if mesh_type=='plane':
-        #     self._create_ground_plane()
-        # elif mesh_type=='heightfield':
-        #     self._create_heightfield()
-        # elif mesh_type=='trimesh':
-        #     self._create_trimesh()
-        # elif mesh_type is not None:
-        #     raise ValueError("Terrain mesh type not recognised. Allowed types are [None, plane, heightfield, trimesh]")
-        # self._create_envs()
+        self.up_axis_idx = 2 # 2 for z, 1 for y -> adapt gravity accordingly
+        self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+        mesh_type = self.cfg.terrain.mesh_type
+        if mesh_type in ['heightfield', 'trimesh']:
+            self.terrain = Terrain(self.cfg.terrain, self.num_envs)
+        if mesh_type=='plane':
+            self._create_ground_plane()
+        elif mesh_type=='heightfield':
+            self._create_heightfield()
+        elif mesh_type=='trimesh':
+            self._create_trimesh()
+        elif mesh_type is not None:
+            raise ValueError("Terrain mesh type not recognised. Allowed types are [None, plane, heightfield, trimesh]")
+        self._create_envs()
         # ####
-        
-    ############# origin Deep whole body widowGo1 instance code
-    def _create_trimesh(self):
-        """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
-        # """
-        tm_params = gymapi.TriangleMeshParams()
-        tm_params.nb_vertices = self.terrain.vertices.shape[0]
-        tm_params.nb_triangles = self.terrain.triangles.shape[0]
 
-        tm_params.transform.p.x = self.cfg.terrain.transform_x
-        tm_params.transform.p.y = self.cfg.terrain.transform_y
-        tm_params.transform.p.z = self.cfg.terrain.transform_z
-        tm_params.static_friction = self.cfg.terrain.static_friction
-        tm_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        tm_params.restitution = self.cfg.terrain.restitution
-        self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'), self.terrain.triangles.flatten(order='C'), tm_params)   
-        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
+    ############# origin Deep whole body widowGo1 instance code
+    # def _create_trimesh(self):
+    #     """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
+    #     # """
+    #     tm_params = gymapi.TriangleMeshParams()
+    #     tm_params.nb_vertices = self.terrain.vertices.shape[0]
+    #     tm_params.nb_triangles = self.terrain.triangles.shape[0]
+
+    #     tm_params.transform.p.x = self.cfg.terrain.transform_x
+    #     tm_params.transform.p.y = self.cfg.terrain.transform_y
+    #     tm_params.transform.p.z = self.cfg.terrain.transform_z
+    #     tm_params.static_friction = self.cfg.terrain.static_friction
+    #     tm_params.dynamic_friction = self.cfg.terrain.dynamic_friction
+    #     tm_params.restitution = self.cfg.terrain.restitution
+    #     self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'), self.terrain.triangles.flatten(order='C'), tm_params)   
+    #     self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
     ##############3
     
     def _create_envs(self):

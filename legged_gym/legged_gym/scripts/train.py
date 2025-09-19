@@ -40,11 +40,11 @@ import wandb
 
 def train(args):
     wandb.init(project='manip-loco', name=str(args.exptid) + '_' + args.run_name)
-    wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1_config.py", policy="now")
-    wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1.py", policy="now")
-    wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/modules/actor_critic.py", policy="now")
-    wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/algorithms/ppo.py", policy="now")
-    wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/runners/on_policy_runner.py", policy="now")
+    # wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1_config.py", policy="now")
+    # wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1.py", policy="now")
+    # wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/modules/actor_critic.py", policy="now")
+    # wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/algorithms/ppo.py", policy="now")
+    # wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/runners/on_policy_runner.py", policy="now")
 
     env, env_cfg = task_registry.make_env(name=args.task, args=args)
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args)
