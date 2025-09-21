@@ -284,20 +284,20 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
     
     class termination:
-        r_threshold = 1.2 #0.78
-        p_threshold = 1.0 #0.60
-        z_threshold = 0.2 #0.325
+        r_threshold = 0.78  #1.2 #0.78
+        p_threshold = 0.60 #1.0 #0.60
+        z_threshold = 0.325 #0.2 #0.325
 
     # Was Overriding terrain 
     class terrain:
-        mesh_type = 'plane' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
         add_slopes = True
         slope_incline = 0.2
         horizontal_scale = 0.05 # 0.025 # [m]
-        vertical_scale = 0.001 #1 / 100000 # [m]
+        vertical_scale = 0.005 #1 / 100000 # [m]
         border_size = 0 # [m]
-        tot_cols = 600
-        tot_rows = 600
+        tot_cols = 1000  # 600
+        tot_rows = 1000  # 1000
         zScale = 0.15
         transform_x = - tot_cols * horizontal_scale / 2
         transform_y = - tot_rows * horizontal_scale / 2
@@ -308,7 +308,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         dynamic_friction = 1.0
         restitution = 0.0
         # rough terrain only:
-        measure_heights = False
+        measure_heights = True
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         # trimesh only:

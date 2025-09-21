@@ -40,13 +40,16 @@ import matplotlib.pyplot as plt
 class Terrain_Perlin:
     def __init__(self, cfg):
         self.cfg = cfg
-        self.xSize = int(cfg.horizontal_scale * cfg.tot_cols)
-        self.ySize = int(cfg.horizontal_scale * cfg.tot_rows)
+        # World width and length (m)
+        self.xSize = int(cfg.horizontal_scale * cfg.tot_cols) # 0.025 (m/px)* 600 (px) = 15 (m)
+        self.ySize = int(cfg.horizontal_scale * cfg.tot_rows) # 0.025 (m/px)* 10000 (px) = 250 (m)
         assert(self.xSize == cfg.horizontal_scale * cfg.tot_cols and self.ySize == cfg.horizontal_scale * cfg.tot_rows)
+        #  Resolution (px)
         self.tot_cols = cfg.tot_cols
         self.tot_rows = cfg.tot_rows
+
         self.heightsamples_float = self.generate_fractal_noise_2d(self.xSize, self.ySize, self.tot_cols, self.tot_rows, zScale=cfg.zScale)
-        self.heightsamples_float[self.tot_cols//2 - 100:, :] += 100000
+        # self.heightsamples_float[self.tot_cols//2 - 100:, :] += 100000
         # self.heightsamples_float[self.tot_cols//2 - 40: self.tot_cols//2 + 40, :] = np.mean(self.heightsamples_float)
         self.heightsamples = (self.heightsamples_float * (1 / cfg.vertical_scale)).astype(np.int16)
         
@@ -106,13 +109,20 @@ class Terrain:
         self.type = cfg.mesh_type
         if self.type in ["none", 'plane']:
             return
+        
+        # A tile size: world size (self.env_length * self.env_width) (m^2)
         self.env_length = cfg.terrain_length
         self.env_width = cfg.terrain_width
+
+        # proportions for category to cumulative distribution 
         self.proportions = [np.sum(cfg.terrain_proportions[:i+1]) for i in range(len(cfg.terrain_proportions))]
 
+        # Whole tile numbers
         self.cfg.num_sub_terrains = cfg.num_rows * cfg.num_cols
+
         self.env_origins = np.zeros((cfg.num_rows, cfg.num_cols, 3))
 
+        # Resolution per tile (px)
         self.width_per_env_pixels = int(self.env_width / cfg.horizontal_scale) # 8/0.1 => 80
         self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale) # 8/0.1 => 80
 
@@ -120,6 +130,7 @@ class Terrain:
         self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border # 10*80 + 2*250 800+500 => 1300
         self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border #20*80 + 2*250 => 2100
 
+        # Resolution for heightmap (px)
         self.height_field_raw = np.zeros((self.tot_rows , self.tot_cols), dtype=np.int16)
         if cfg.curriculum:
             self.curiculum()
@@ -148,8 +159,8 @@ class Terrain:
     def curiculum(self):
         for j in range(self.cfg.num_cols):
             for i in range(self.cfg.num_rows):
-                difficulty = i / self.cfg.num_rows
-                choice = j / self.cfg.num_cols + 0.001
+                difficulty = i / self.cfg.num_rows #levels
+                choice = j / self.cfg.num_cols + 0.001 # types
 
                 terrain = self.make_terrain(choice, difficulty)
                 self.add_terrain_to_map(terrain, i, j)
