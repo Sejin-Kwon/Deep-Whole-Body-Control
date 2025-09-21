@@ -362,8 +362,11 @@ class WidowGo1(LeggedRobot):
 
         base_init_state_list = self.cfg.init_state.pos + self.cfg.init_state.rot + self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
         self.base_init_state = to_torch(base_init_state_list, device=self.device, requires_grad=False)
+        # print("base_init_state!!!!!!!!!!!!!!!!!!!!!!!",self.base_init_state)
+        # print(self.base_init_state.shape) #[13]
         start_pose = gymapi.Transform()
         start_pose.p = gymapi.Vec3(*self.base_init_state[:3])
+        # print("start_pose.p",start_pose.p) # Vec3(0.000000, 0.000000, 0.420000)
         box_start_pose = gymapi.Transform()
 
         self._get_env_origins()
