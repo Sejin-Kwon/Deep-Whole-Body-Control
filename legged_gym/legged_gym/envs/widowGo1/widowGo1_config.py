@@ -46,8 +46,8 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
     class goal_ee:
         num_commands = 3
-        traj_time = [1, 3]
-        hold_time = [0.5, 2]
+        traj_time = [5, 10]
+        hold_time = [1.0, 3]
         # traj_time = [10,20] 
         # hold_time = [2,3] 
         collision_upper_limits = [0.3, 0.15, 0.05 - 0.165]
@@ -185,6 +185,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         fix_base_link = False
     
     class box:
+        enabled = False  
         box_size = 0.1
         randomize_base_mass = True
         added_mass_range = [-0.001, 0.050]
@@ -293,7 +294,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
         add_slopes = True
         slope_incline = 0.2
-        horizontal_scale = 0.05 # 0.025 # [m]
+        horizontal_scale = 0.1 # 0.025 # [m]
         vertical_scale = 0.005 #1 / 100000 # [m]
         border_size = 0 # [m]
         tot_cols = 600  # 600

@@ -88,7 +88,7 @@ class Terrain_Perlin:
         return np.sqrt(2)*((1-t[:,:,1])*n0 + t[:,:,1]*n1) * 0.5 + 0.5
     
     def generate_fractal_noise_2d(self, xSize=20, ySize=20, xSamples=1600, ySamples=1600, \
-        frequency=10, fractalOctaves=2, fractalLacunarity = 2.0, fractalGain=0.25, zScale = 0.23):
+        frequency=1, fractalOctaves=2, fractalLacunarity = 2.0, fractalGain=0.25, zScale = 0.23):
         xScale = frequency * xSize
         yScale = frequency * ySize
         amplitude = 1
