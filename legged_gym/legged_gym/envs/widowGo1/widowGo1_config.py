@@ -255,7 +255,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             leg_energy = -0
             leg_energy_abs_sum = -0
             tracking_lin_vel_x_l1 = 0.   # tracking_lin_vel_x_l1
-            tracking_lin_vel_x_exp = 1.0
+            tracking_lin_vel_x_exp = 1.5
             tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1  
             tracking_ang_vel_yaw_exp = 0.5  #check final_tracking_ang_vel_yaw_exp  # tracking_ang_vel_yaw_exp 
             tracking_lin_vel_y_l2 = 0
