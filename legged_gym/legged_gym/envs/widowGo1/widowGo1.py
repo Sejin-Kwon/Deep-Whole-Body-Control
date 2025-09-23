@@ -1038,6 +1038,7 @@ class WidowGo1(LeggedRobot):
         # self.extras["metric"]["lin_vel_y_error"]= torch.mean(torch.sqrt(torch.sum(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1]))))
         self.extras["metric"]["lin_vel_y_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1])))
         self.extras["metric"]["ang_vel_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])))
+        self.extras["metric"]["ee_pos_error_cart_rmse"] = torch.sqrt(torch.mean(torch.sum((self.ee_pos - (quat_rotate(self.base_yaw_quat, sphere2cart(self.curr_ee_goal_sphere)) + torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)))**2, dim=1)))
         self.extras["metric"]["lin_vel_x"] = torch.mean(self.base_lin_vel[:, 0])
         self.extras["metric"]["lin_vel_y"] = torch.mean(self.base_lin_vel[:, 1])
         self.extras["metric"]["lin_vel_z"] = torch.mean(self.base_lin_vel[:, 2])
@@ -1640,3 +1641,6 @@ class WidowGo1(LeggedRobot):
     def _reward_collision(self):
         # Penalize collisions on selected bodies
         return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalized_contact_indices, :], dim=-1) > 0.1), dim=1)
+    
+    # def _reward_tracking_ee_cart(self):
+    #     return torch.exp(- torch.norm(self.ee_pos - (quat_rotate(self.base_yaw_quat, sphere2cart(self.curr_ee_goal_sphere))+ torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)),dim=1) / self.cfg.rewards.tracking_ee_cart_sigma)

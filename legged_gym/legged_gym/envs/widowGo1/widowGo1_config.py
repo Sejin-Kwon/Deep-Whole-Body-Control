@@ -116,7 +116,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         clip_actions = 100.
 
     class env:
-        num_envs = 5000
+        num_envs = 2048
         num_actions = 12 + 6 #CAUTION
         num_torques = 12 + 6
         action_delay = 2  # -1 for no delay
@@ -273,6 +273,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         tracking_ee_sigma = 0.25
+        tracking_ee_cart_sigma = 0.25
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.
