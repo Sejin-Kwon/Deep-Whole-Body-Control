@@ -239,10 +239,10 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             lin_vel_z = -0.
             ang_vel_xy = -0.
             orientation = -0.
-            torques = 0
-            energy_square = -6e-5    # energy_square
+            torques = -0.000005
+            energy_square = 0  # energy_square
             dof_vel = 0
-            dof_acc = -0
+            dof_acc = -2.5e-7
             base_height = 0
             feet_air_time =  0
             collision = 0
