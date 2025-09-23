@@ -264,7 +264,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         class arm_scales:
             termination = -0.0
             tracking_ee_sphere = 0.55  # tracking_ee_sphere
-            tracking_ee_cart = 0.0
+            tracking_ee_cart = 0.5
             arm_orientation = -0.
             arm_energy_abs_sum = -0.0040   # arm_energy_abs_sum 
             tracking_ee_orn = 0.
