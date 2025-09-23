@@ -1435,6 +1435,10 @@ class WidowGo1(LeggedRobot):
         # print('------self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
 
         default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
+        
+        if getattr(self.cfg.control, "arm_gravity_comp", True):  
+            g_torque = self.get_g_torques()    
+            default_torques[:, 12:] += g_torque
 
         if self.cfg.control.adaptive_arm_gains:
             leg_torques = default_torques[:, :12]

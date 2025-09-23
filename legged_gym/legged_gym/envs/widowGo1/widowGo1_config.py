@@ -173,6 +173,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
         torque_supervision = False
+        arm_gravity_comp = True
 
     class asset( LeggedRobotCfg.asset ):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/widowGo1/urdf/widowGo1.urdf'
