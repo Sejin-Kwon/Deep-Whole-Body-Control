@@ -59,11 +59,11 @@ def play(args):
     
     # env_cfg.terrain.curriculum = False
     # env_cfg.noise.add_noise = False
-    env_cfg.domain_rand.randomize_friction = False
-    env_cfg.domain_rand.randomize_base_mass = False
-    env_cfg.domain_rand.randomize_base_com = False
-    env_cfg.domain_rand.randomize_motor = False
-    env_cfg.domain_rand.push_robots = False
+    env_cfg.domain_rand.randomize_friction = True
+    env_cfg.domain_rand.randomize_base_mass = True
+    env_cfg.domain_rand.randomize_base_com = True
+    env_cfg.domain_rand.randomize_motor = True
+    env_cfg.domain_rand.push_robots = True
 
     env_cfg.commands.lin_vel_x_schedule = [0, 1]
     env_cfg.commands.ang_vel_yaw_schedule = [0, 1]
@@ -74,40 +74,20 @@ def play(args):
     env_cfg.goal_ee.l_schedule = [0, 1]
     env_cfg.goal_ee.p_schedule = [0, 1]
     env_cfg.goal_ee.y_schedule = [0, 1]
-    # env_cfg.goal_ee.arm_action_scale_schedule = [0, 1]
-    env_cfg.goal_ee.arm_action_scale_schedule  = [1, 1]
-    # env_cfg.goal_ee.tracking_ee_reward_schedule = [0, 1]
+    env_cfg.goal_ee.arm_action_scale_schedule = [0, 1]
+    env_cfg.goal_ee.tracking_ee_reward_schedule = [0, 1]
     env_cfg.goal_ee.underground_limit = -0.57  # -0.54 -0.4
-    
+
 
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
-
-    env.update_counter = 1
-    env.lin_vel_x_schedule            = [0, 1]
-    env.ang_vel_yaw_schedule          = [0, 1]
-    env.tracking_ang_vel_yaw_schedule = [0, 1]
-
-    env.goal_ee_l_schedule = [0, 1]
-    env.goal_ee_p_schedule = [0, 1]
-    env.goal_ee_y_schedule = [0, 1]
-    env.arm_action_scale_schedule = [1, 1]
-
     obs = env.get_observations()
     # load policy
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device, stochastic=args.stochastic)
+
     
-
-    print(">>> loaded exp:", train_cfg.runner.experiment_name)
-    from legged_gym.utils.helpers import get_load_path
-    log_root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
-    print(">>> model path:", get_load_path(log_root, load_run=args.load_run, checkpoint=args.checkpoint))
-
-    with torch.no_grad():
-        a = policy(obs[:1], hist_encoding=True)  # args.use_jit=False 라면
-    print(">>> action sample (first 8):", a[0, :8].cpu().numpy())
     # export policy as a jit module (used to run it from C++)
     if EXPORT_POLICY:
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
@@ -142,7 +122,6 @@ def play(args):
 
     env.update_command_curriculum()
     env.reset()
-    # env.set_camera(np.array([2.0, 0.0, 1.3]), np.array([0.0, 0.0, 0.4]))
     for i in range(100*int(env.max_episode_length)):
         start_time = time.time()
         if args.use_jit:
@@ -150,59 +129,11 @@ def play(args):
             actions = policy(torch.cat((obs[:, :env.cfg.env.num_proprio], latent), dim=1))
         else:
             actions = policy(obs.detach(), hist_encoding=True)
-        
-        # actions = torch.ones_like(actions)
-        if i % 50 == 0:
-            a = actions[0].detach().cpu().numpy()
-            print("[dbg] act[0] abs-mean:", float(np.mean(np.abs(a))),"leg-max:", float(np.max(np.abs(a[:12]))))
-
         obs, _, rews, arm_rews, dones, infos = env.step(actions.detach())
         # input()
-        # env.commands[:, 0] = 0.3
-        # env.commands[:, 1] = 0.0
-        # env.commands[:, 2] = 0.3
-        # env.curr_ee_goal_sphere[:, 0] = 0.3
-        # env.curr_ee_goal_sphere[:, 1] = 0.0
-        # env.curr_ee_goal_sphere[:, 2] = 0.0
-        env.commands[:, 0] = 0.9   # x 전진 m/s
-        env.commands[:, 2] = 0.3   # yaw rad/s
         if i % 50 == 0:
             command_detached = env.commands[0].detach().cpu().numpy()
             print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')
-            curr_ee_goal_cmd = env.curr_ee_goal_sphere[0].detach().cpu().numpy()
-            print('curr_ee_goal: ' , f'{curr_ee_goal_cmd[0]:.2f}', f'{curr_ee_goal_cmd[1]:.2f}', f'{curr_ee_goal_cmd[2]:.2f}')
-            # command_detached_lin_ang = env.commands[:,].detach().cpu().numpy()
-            # print('command_lin_ang: ', f'{command_detached_lin_ang[:,0]:.2f}', f'{command_detached_lin_ang[:,2]:.2f}')
-            print(">>> action_scale:", env.action_scale if hasattr(env, "action_scale") else "N/A")
-            # # make sure EE/arm action channels are not zero-scaled
-            # with torch.no_grad():
-            #     # assuming last 3 dims are EE deltas [dl, dp, dy]
-            #     ee_scale = torch.tensor([0.2, 0.2, 0.2], device=env.device)
-            #     env.action_scale[..., -3:] = ee_scale
-            # print(">>> patched action_scale:", env.action_scale)
-            
-            a = actions[0].detach().cpu().numpy()
-            print("[dbg] act[0] :", a)
-
-
-            if hasattr(env, "dof_targets") and hasattr(env, "default_dof_pos"):
-                d = (env.dof_targets[0,:12] - env.default_dof_pos[:12]).abs().max().item()
-                print("[dbg] Δtarget_max_leg:", d)
-
-            if hasattr(env, "torques"):
-                print("[dbg] τ_max_leg:", float(env.torques[0,:12].abs().max()))
-                print("[dbg] τ:", env.torques[0])
-
-            props = env.gym.get_actor_dof_properties(env.envs[0], env.actor_handles[0])
-            print("[dbg] driveMode uniq:", np.unique(props['driveMode']))
-            print("[dbg] kp",props['stiffness'])
-            print("[dbg] ks",props['damping'])
-            print("[dbg] kp min/max:", float(props['stiffness'].min()), float(props['stiffness'].max()))
-            print("[dbg] kd min/max:", float(props['damping'].min()), float(props['damping'].max()))
-            print("[dbg] effort min/max:", float(props["effort"].min()), float(props["effort"].max()))
-            print("[dbg] hasLimits any?:", bool(props["hasLimits"].any()))
-            print("[dbg] lower/upper sample:", props["lower"][:6], props["upper"][:6])
-
         if i % 10 == 0:
             pass
             # print('\taction: ', actions.detach().cpu().numpy()[0, -6:])

@@ -162,9 +162,9 @@ class WidowGo1(LeggedRobot):
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
                              for name in list(self.reward_scales.keys()) + list(self.arm_reward_scales.keys())}
 
-        self.metric_names = ['leg_energy_abs_sum', 'tracking_lin_vel_x_l1', 'tracking_ang_vel_yaw_exp', 'tracking_ee_cart', 'tracking_ee_sphere', 'tracking_ee_orn', 'leg_action_l2', 'torque', 'energy_square', 'foot_contacts_z']
-        self.episode_metric_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False) \
-            for name in self.metric_names}
+        # self.metric_names = ['leg_energy_abs_sum', 'tracking_lin_vel_x_l1', 'tracking_ang_vel_yaw_exp', 'tracking_ee_cart', 'tracking_ee_sphere', 'tracking_ee_orn', 'leg_action_l2', 'torque', 'energy_square', 'foot_contacts_z']
+        # self.episode_metric_sums = {name: torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False) \
+        #     for name in self.metric_names}
 
 
     def compute_reward(self):
@@ -599,6 +599,7 @@ class WidowGo1(LeggedRobot):
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 0]
         self.dof_pos_wrapped = self.dof_pos.clone()
         self.dof_pos_wo_gripper = self.dof_pos[:, :-2]
+        # print(self.dof_pos_wo_gripper,"dof_pos_wo_gripper!!!!!!!!!!!!!!!")
         self.dof_pos_wo_gripper_wrapped = self.dof_pos_wo_gripper.clone()
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 1]
         self.dof_vel_wo_gripper = self.dof_vel[:, :-2]
@@ -693,6 +694,7 @@ class WidowGo1(LeggedRobot):
         self.common_step_counter = 0
         self.extras = {}
         self.extras["episode"] = {}
+        self.extras["metric"] = {}
         self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.], device=self.device).repeat((self.num_envs, 1))
@@ -732,6 +734,8 @@ class WidowGo1(LeggedRobot):
                 if dof_name in name:
                     self.p_gains[i] = self.cfg.control.stiffness[dof_name]
                     self.d_gains[i] = self.cfg.control.damping[dof_name]
+                    # print(self.p_gains,'p_gains!!!!!!!!!!!!!!!!!!111')
+                    # print(self.d_gains,'d_gains!!!!!!!!!!!!!!!!!!111')
                     found = True
             if not found:
                 self.p_gains[i] = 0.
@@ -851,9 +855,9 @@ class WidowGo1(LeggedRobot):
             self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
             self.episode_sums[key][env_ids] = 0.
         
-        for key in self.episode_metric_sums.keys():
-            self.extras["episode"]['metric_' + key] = torch.mean(self.episode_metric_sums[key][env_ids]) / self.max_episode_length_s
-            self.episode_metric_sums[key][env_ids] = 0.
+        # for key in self.episode_metric_sums.keys():
+        #     self.extras["episode"]['metric_' + key] = torch.mean(self.episode_metric_sums[key][env_ids]) / self.max_episode_length_s
+        #     self.episode_metric_sums[key][env_ids] = 0.
 
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
@@ -1029,6 +1033,21 @@ class WidowGo1(LeggedRobot):
         command_env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         ## (self.episode_length_buf % ( 3.0(s)/0.02(s)==150) == 0))
         # target_ee_env_ids = (self.episode_length_buf % int(self.cfg.target_ee.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
+        
+        self.extras["metric"]["lin_vel_x_error_rmse"]= torch.sqrt(torch.mean(torch.square(self.commands[:, 0] - self.base_lin_vel[:, 0])))
+        # self.extras["metric"]["lin_vel_y_error"]= torch.mean(torch.sqrt(torch.sum(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1]))))
+        self.extras["metric"]["lin_vel_y_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1])))
+        self.extras["metric"]["ang_vel_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])))
+        self.extras["metric"]["lin_vel_x"] = torch.mean(self.base_lin_vel[:, 0])
+        self.extras["metric"]["lin_vel_y"] = torch.mean(self.base_lin_vel[:, 1])
+        self.extras["metric"]["lin_vel_z"] = torch.mean(self.base_lin_vel[:, 2])
+        self.extras["metric"]["ang_vel_xy"] = torch.mean(torch.sqrt(torch.sum(torch.square(self.base_ang_vel[:, :2]), dim=1)))
+        self.extras["metric"]["torques"] = torch.mean(torch.sqrt(torch.sum(torch.square(self.torques), dim=1)))
+        self.extras["metric"]["dof_vel"] = torch.mean(torch.sqrt(torch.sum(self.dof_vel**2, dim=1)))
+        self.extras["metric"]["dof_acc"] = torch.mean(torch.sqrt(torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)))
+        p = self.torques * self.dof_vel
+        var_p = torch.var(p, dim=1, unbiased=False)
+        self.extras["metric"]["power_dist_var2_mean"] = torch.mean(var_p.square())
 
         self._resample_commands(command_env_ids)
         # self._resample_target_ee(target_ee_env_ids)
@@ -1405,10 +1424,14 @@ class WidowGo1(LeggedRobot):
         # pd controller
         if self.cfg.control.adaptive_arm_gains:
             actions, delta_arm_gains = actions[:, :12+6], actions[:, 12+6:]
+        
         actions_scaled = actions * self.motor_strength * self.action_scale
 
         self.dof_pos_wo_gripper_wrapped[:] = self.dof_pos_wo_gripper
+        # print('self.dof_pos_wo_gripper',self.dof_pos_wo_gripper)
+        # print('self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
         self.dof_pos_wo_gripper_wrapped[:, -8] = torch_wrap_to_pi_minuspi(self.dof_pos_wo_gripper_wrapped[:, -8])
+        # print('------self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
 
         default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
 
@@ -1424,6 +1447,8 @@ class WidowGo1(LeggedRobot):
         if self.cfg.control.torque_supervision:
             self.arm_ee_control_torques = self.get_arm_ee_control_torques()
         
+        # print("torque limit!!!!!!!!!!!!!!!!",-self.torque_limits, self.torque_limits)
+        # print("torque!!!!!!!!!!!!!!!!!!!!!!!",torques)
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
     
     def _get_init_start_ee_sphere(self):
@@ -1486,7 +1511,7 @@ class WidowGo1(LeggedRobot):
 
         ee_pos_error = torch.sum(torch.abs(cart2sphere(ee_pos_local) - self.curr_ee_goal_sphere) * self.sphere_error_scale, dim=1)
 
-        self.episode_metric_sums['tracking_ee_sphere'] += ee_pos_error
+        # self.episode_metric_sums['tracking_ee_sphere'] += ee_pos_error
         return torch.exp(-ee_pos_error/self.cfg.rewards.tracking_ee_sigma)
 
     def _reward_tracking_ee_cart(self):
@@ -1494,7 +1519,7 @@ class WidowGo1(LeggedRobot):
 
         ee_pos_error = torch.sum(torch.abs(self.ee_pos - target_ee), dim=1)
 
-        self.episode_metric_sums['tracking_ee_cart'] += ee_pos_error
+        # self.episode_metric_sums['tracking_ee_cart'] += ee_pos_error
         return torch.exp(-ee_pos_error/self.cfg.rewards.tracking_ee_sigma)
     
     def _reward_tracking_ee_orn(self):
@@ -1510,7 +1535,7 @@ class WidowGo1(LeggedRobot):
 
     def _reward_hip_action_l2(self):
         action_l2 = torch.sum(self.actions[:, [0, 3, 6, 9]] ** 2, dim=1)
-        self.episode_metric_sums['leg_action_l2'] += action_l2
+        # self.episode_metric_sums['leg_action_l2'] += action_l2
         return action_l2
 
     def _reward_tracking_ee_orn_ry(self):
@@ -1520,14 +1545,14 @@ class WidowGo1(LeggedRobot):
         ee_orn_euler = torch.stack(euler_from_quat(self.ee_orn), dim=-1)
         orn_err = torch.sum(torch.abs((torch_wrap_to_pi_minuspi(self.ee_goal_orn_euler - ee_orn_euler) * self.orn_error_scale)[:, [0, 2]]), dim=1)
 
-        self.episode_metric_sums['tracking_ee_orn'] += orn_err
+        # self.episode_metric_sums['tracking_ee_orn'] += orn_err
 
         return torch.exp(-orn_err/self.cfg.rewards.tracking_ee_sigma)
 
 
     def _reward_leg_energy_abs_sum(self):
         energy = torch.sum(torch.abs(self.torques[:, :12] * self.dof_vel[:, :12]), dim = 1)
-        self.episode_metric_sums['leg_energy_abs_sum'] += energy
+        # self.episode_metric_sums['leg_energy_abs_sum'] += energy
         return energy
 
     def _reward_leg_energy_sum_abs(self):
@@ -1536,7 +1561,7 @@ class WidowGo1(LeggedRobot):
     
     def _reward_leg_action_l2(self):
         action_l2 = torch.sum(self.actions[:, :12] ** 2, dim=1)
-        self.episode_metric_sums['leg_action_l2'] += action_l2
+        # self.episode_metric_sums['leg_action_l2'] += action_l2
         return action_l2
     
     def _reward_leg_energy(self):
@@ -1558,12 +1583,12 @@ class WidowGo1(LeggedRobot):
     
     def _reward_tracking_lin_vel_x_l1(self):
         error = torch.abs(self.commands[:, 0] - self.base_lin_vel[:, 0])
-        self.episode_metric_sums['tracking_lin_vel_x_l1'] += error
+        # self.episode_metric_sums['tracking_lin_vel_x_l1'] += error
         return - error + torch.abs(self.commands[:, 0])
 
     def _reward_tracking_lin_vel_x_exp(self):
         error = torch.abs(self.commands[:, 0] - self.base_lin_vel[:, 0])
-        self.episode_metric_sums['tracking_lin_vel_x_l1'] += error
+        # self.episode_metric_sums['tracking_lin_vel_x_l1'] += error
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
     def _reward_tracking_ang_vel_yaw_l1(self):
@@ -1572,7 +1597,7 @@ class WidowGo1(LeggedRobot):
     
     def _reward_tracking_ang_vel_yaw_exp(self):
         error = torch.abs(self.commands[:, 2] - self.base_ang_vel[:, 2])
-        self.episode_metric_sums['tracking_ang_vel_yaw_exp'] += error
+        # self.episode_metric_sums['tracking_ang_vel_yaw_exp'] += error
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
     def _reward_tracking_lin_vel_y_l2(self):
@@ -1586,17 +1611,17 @@ class WidowGo1(LeggedRobot):
 
     def _reward_foot_contacts_z(self):
         foot_contacts_z = torch.square(self.force_sensor_tensor[:, :, 2]).sum(dim=-1)
-        self.episode_metric_sums['foot_contacts_z'] += foot_contacts_z
+        # self.episode_metric_sums['foot_contacts_z'] += foot_contacts_z
         return foot_contacts_z
 
     def _reward_torques(self):
         # Penalize torques
         torque = torch.sum(torch.square(self.torques), dim=1)
-        self.episode_metric_sums['torque'] += torque
+        # self.episode_metric_sums['torque'] += torque
         return torque
     
     def _reward_energy_square(self):
         energy = torch.sum(torch.square(self.torques[:, :12] * self.dof_vel[:, :12]), dim=1)
-        self.episode_metric_sums['energy_square'] += energy
+        # self.episode_metric_sums['energy_square'] += energy
         return energy
     

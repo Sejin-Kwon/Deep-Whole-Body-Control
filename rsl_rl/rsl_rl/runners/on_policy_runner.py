@@ -113,6 +113,7 @@ class OnPolicyRunner:
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
         ep_infos = []
+        metric_infos = []
         rewbuffer = deque(maxlen=100)
         armrewbuffer = deque(maxlen=100)
         lenbuffer = deque(maxlen=100)
@@ -141,6 +142,9 @@ class OnPolicyRunner:
                         # Book keeping
                         if 'episode' in infos:
                             ep_infos.append(infos['episode'])
+                        if 'metric' in infos:
+                            metric_infos.append(infos['metric'])
+
                         cur_reward_sum += rewards
                         cur_arm_reward_sum += arm_rewards
                         cur_episode_length += 1
@@ -175,6 +179,7 @@ class OnPolicyRunner:
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
             ep_infos.clear()
+            metric_infos.clear()
         
         self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
@@ -200,6 +205,24 @@ class OnPolicyRunner:
                 # wandb.log({'Episode/' + key: value}, step=locs['it'])
                 wandb_dict['Episode/' + key] = value
                 ep_string += f"""{f'Mean episode {key}:':>{pad}} {value:.4f}\n"""
+                
+
+        if locs['metric_infos']:
+            for key in locs['metric_infos'][0]:
+                infotensor = torch.tensor([], device=self.device)
+                for metric_info in locs['metric_infos']:
+                    if key not in metric_info:
+                        # print(f"Warning: Key '{key}' not found in metric_info. Skipping this entry.")
+                        continue
+                    # handle scalar and zero dimensional tensor infos
+                    if not isinstance(metric_info[key], torch.Tensor):
+                        metric_info[key] = torch.Tensor([metric_info[key]])
+                    if len(metric_info[key].shape) == 0:
+                        metric_info[key] = metric_info[key].unsqueeze(0)
+                    infotensor = torch.cat((infotensor, metric_info[key].to(self.device)))
+                value = torch.mean(infotensor)
+                wandb_dict['Metric/' + key] = value
+
         leg_mean_std = self.alg.actor_critic.std[:, :12].mean()
         arm_mean_std = self.alg.actor_critic.std[:, 12:].mean()
         std_numpy = self.alg.actor_critic.std.cpu().detach().numpy()
