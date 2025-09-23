@@ -245,7 +245,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             dof_acc = -2.5e-7
             base_height = 0
             feet_air_time =  0
-            collision = 0
+            collision = -1.0
             feet_stumble = -0 
             action_rate = -0
             stand_still = 0
