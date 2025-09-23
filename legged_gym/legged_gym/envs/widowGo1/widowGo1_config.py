@@ -168,8 +168,9 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         stiffness = {'joint': 50, 'widow': 12}  # [N*m/rad]    'widow': 5
         damping = {'joint': 1, 'widow': 0.8}     # [N*m*s/rad]   'widow': 0.5
         adaptive_arm_gains = False
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0, 0, 0]
+        # action scale: target angle = actionScale * action + defaultAngle   
+        # action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0, 0, 0]
+        action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0.3, 0.3, 0.3]
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
         torque_supervision = False
