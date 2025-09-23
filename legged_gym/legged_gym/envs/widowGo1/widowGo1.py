@@ -1603,6 +1603,10 @@ class WidowGo1(LeggedRobot):
     def _reward_tracking_lin_vel_y_l2(self):
         return (self.commands[:, 1] - self.base_lin_vel[:, 1]) ** 2
     
+    def _reward_lin_vel_z(self):
+        # Penalize z axis base linear velocity
+        return torch.square(self.base_lin_vel[:, 2])
+
     def _reward_tracking_lin_vel_z_l2(self):
         return (self.commands[:, 2] - self.base_lin_vel[:, 2]) ** 2
     
@@ -1614,14 +1618,30 @@ class WidowGo1(LeggedRobot):
         # self.episode_metric_sums['foot_contacts_z'] += foot_contacts_z
         return foot_contacts_z
 
+    # def _reward_torques(self):
+    #     # Penalize torques
+    #     torque = torch.sum(torch.square(self.torques), dim=1)
+    #     # self.episode_metric_sums['torque'] += torque
+    #     return torque
+    
     def _reward_torques(self):
         # Penalize torques
-        torque = torch.sum(torch.square(self.torques), dim=1)
-        # self.episode_metric_sums['torque'] += torque
-        return torque
+        return torch.sum(torch.square(self.torques), dim=1)
+
+    def _reward_dof_vel(self):
+        # Penalize dof velocities
+        return torch.sum(torch.square(self.dof_vel), dim=1)
+    
+    def _reward_dof_acc(self):
+        # Penalize dof accelerations
+        return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
+    
     
     def _reward_energy_square(self):
         energy = torch.sum(torch.square(self.torques[:, :12] * self.dof_vel[:, :12]), dim=1)
         # self.episode_metric_sums['energy_square'] += energy
         return energy
     
+    def _reward_collision(self):
+        # Penalize collisions on selected bodies
+        return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalized_contact_indices, :], dim=-1) > 0.1), dim=1)

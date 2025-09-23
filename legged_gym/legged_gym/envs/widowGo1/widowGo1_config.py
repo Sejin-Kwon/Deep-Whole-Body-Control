@@ -271,8 +271,8 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             tracking_ee_orn_ry = 0.
         
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
-        tracking_sigma = 1 # tracking reward = exp(-error^2/sigma)
-        tracking_ee_sigma = 1
+        tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
+        tracking_ee_sigma = 0.25
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.
