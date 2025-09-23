@@ -233,7 +233,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
   
     class rewards:
         class scales:
-            termination = -0
+            termination = -1.0
             tracking_lin_vel = 0.
             tracking_ang_vel = 0.
             lin_vel_z = -0.
