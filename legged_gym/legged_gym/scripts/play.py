@@ -149,6 +149,8 @@ def play(args):
             latent = history_encoder(obs[:, env.cfg.env.num_proprio+env.cfg.env.num_priv:])
             actions = policy(torch.cat((obs[:, :env.cfg.env.num_proprio], latent), dim=1))
         else:
+
+            print(obs[:, :env.cfg.env.num_proprio])
             actions = policy(obs.detach(), hist_encoding=True)
         
         # print(actions.shape)

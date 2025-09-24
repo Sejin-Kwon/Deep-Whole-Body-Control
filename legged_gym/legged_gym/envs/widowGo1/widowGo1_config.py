@@ -233,31 +233,79 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
     class noise( LeggedRobotCfg.noise ):
         add_noise = False
   
+    # class rewards:
+    #     class scales:
+    #         termination = -1.0
+    #         tracking_lin_vel = 0.
+    #         tracking_ang_vel = 0.
+    #         lin_vel_z = -0.
+    #         ang_vel_xy = -0.
+    #         orientation = -0.
+    #         torques = -0.000005
+    #         energy_square = 0  # energy_square
+    #         dof_vel = 0
+    #         dof_acc = -2.5e-7
+    #         base_height = 0
+    #         feet_air_time =  0
+    #         collision = -1.0
+    #         feet_stumble = -0 
+    #         action_rate = -0
+    #         stand_still = 0
+    #         survive = 0.2             # Alive - survive 
+    #         leg_energy = -0
+    #         leg_energy_abs_sum = -0
+    #         tracking_lin_vel_x_l1 = 0.   # tracking_lin_vel_x_l1
+    #         tracking_lin_vel_x_exp = 1.5
+    #         tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1  
+    #         tracking_ang_vel_yaw_exp = 1  #check final_tracking_ang_vel_yaw_exp  # tracking_ang_vel_yaw_exp 
+    #         tracking_lin_vel_y_l2 = 0
+    #         tracking_lin_vel_z_l2 = -0.0
+    #         leg_action_l2 = -0.0
+    #         hip_action_l2 = -0.01
+    #         foot_contacts_z = -1e-4
+    #     class arm_scales:
+    #         termination = -0.0
+    #         tracking_ee_sphere = 0.55  # tracking_ee_sphere
+    #         tracking_ee_cart = 0.5
+    #         arm_orientation = -0.
+    #         arm_energy_abs_sum = -0.0040   # arm_energy_abs_sum 
+    #         tracking_ee_orn = 0.
+    #         tracking_ee_orn_ry = 0.
+        
+    #     only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
+    #     tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
+    #     tracking_ee_sigma = 0.25
+    #     tracking_ee_cart_sigma = 0.25
+    #     soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
+    #     soft_dof_vel_limit = 1.
+    #     soft_torque_limit = 1.
+    #     base_height_target = 0.25
+    #     max_contact_force = 100. # forces above this value are penalized
     class rewards:
         class scales:
-            termination = -1.0
+            termination = -0
             tracking_lin_vel = 0.
             tracking_ang_vel = 0.
             lin_vel_z = -0.
             ang_vel_xy = -0.
             orientation = -0.
-            torques = -0.000005
-            energy_square = 0  # energy_square
+            torques = 0
+            energy_square = -6e-5
             dof_vel = 0
-            dof_acc = -2.5e-7
+            dof_acc = -0
             base_height = 0
             feet_air_time =  0
-            collision = -1.0
+            collision = 0
             feet_stumble = -0 
             action_rate = -0
             stand_still = 0
-            survive = 0.2             # Alive - survive 
+            survive = 0.2
             leg_energy = -0
             leg_energy_abs_sum = -0
-            tracking_lin_vel_x_l1 = 0.   # tracking_lin_vel_x_l1
-            tracking_lin_vel_x_exp = 1.5
-            tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1  
-            tracking_ang_vel_yaw_exp = 1  #check final_tracking_ang_vel_yaw_exp  # tracking_ang_vel_yaw_exp 
+            tracking_lin_vel_x_l1 = 0.5
+            tracking_lin_vel_x_exp = 0.
+            tracking_ang_vel_yaw_l1 = 0  #check final_tracking_ang_vel_yaw_l1
+            tracking_ang_vel_yaw_exp = 0.15  #check final_tracking_ang_vel_yaw_exp
             tracking_lin_vel_y_l2 = 0
             tracking_lin_vel_z_l2 = -0.0
             leg_action_l2 = -0.0
@@ -265,17 +313,16 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             foot_contacts_z = -1e-4
         class arm_scales:
             termination = -0.0
-            tracking_ee_sphere = 0.55  # tracking_ee_sphere
-            tracking_ee_cart = 0.5
+            tracking_ee_sphere = 0.55
+            tracking_ee_cart = 0.0
             arm_orientation = -0.
-            arm_energy_abs_sum = -0.0040   # arm_energy_abs_sum 
+            arm_energy_abs_sum = -0.0040
             tracking_ee_orn = 0.
             tracking_ee_orn_ry = 0.
         
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
-        tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
-        tracking_ee_sigma = 0.25
-        tracking_ee_cart_sigma = 0.25
+        tracking_sigma = 1 # tracking reward = exp(-error^2/sigma)
+        tracking_ee_sigma = 1
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.

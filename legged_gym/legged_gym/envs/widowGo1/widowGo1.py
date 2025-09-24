@@ -789,6 +789,8 @@ class WidowGo1(LeggedRobot):
         self.update_counter += 1
 
         self.lin_vel_x_ranges = self._get_curriculum_value(self.lin_vel_x_schedule, self.init_lin_vel_x_ranges, self.final_lin_vel_x_ranges, self.update_counter)
+        print(self.lin_vel_x_ranges, "!!!!!!!")
+        
         self.ang_vel_yaw_ranges = self._get_curriculum_value(self.ang_vel_yaw_schedule, self.init_ang_vel_yaw_ranges, self.final_ang_vel_yaw_ranges, self.update_counter)
         self.reward_scales['tracking_ang_vel_yaw_exp'] = self._get_curriculum_value(self.tracking_ang_vel_yaw_schedule, 0, self.final_tracking_ang_vel_yaw_exp, self.update_counter)
 
@@ -1411,51 +1413,6 @@ class WidowGo1(LeggedRobot):
     #     )
 
 
-    # def _compute_torques(self, actions):
-    #     """ Compute torques from actions.
-    #         Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
-    #         [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
-
-    #     Args:
-    #         actions (torch.Tensor): Actions
-
-    #     Returns:
-    #         [torch.Tensor]: Torques sent to the simulation
-    #     """
-    #     # pd controller
-    #     if self.cfg.control.adaptive_arm_gains:
-    #         actions, delta_arm_gains = actions[:, :12+6], actions[:, 12+6:]
-        
-    #     actions_scaled = actions * self.motor_strength * self.action_scale
-
-    #     self.dof_pos_wo_gripper_wrapped[:] = self.dof_pos_wo_gripper
-    #     # print('self.dof_pos_wo_gripper',self.dof_pos_wo_gripper)
-    #     # print('self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
-    #     self.dof_pos_wo_gripper_wrapped[:, -8] = torch_wrap_to_pi_minuspi(self.dof_pos_wo_gripper_wrapped[:, -8])
-    #     # print('------self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
-
-    #     default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
-        
-    #     if getattr(self.cfg.control, "arm_gravity_comp", True):  
-    #         g_torque = self.get_g_torques()    
-    #         default_torques[:, 12:] += g_torque
-
-    #     if self.cfg.control.adaptive_arm_gains:
-    #         leg_torques = default_torques[:, :12]
-    #         adaptive_arm_p_gains = self.p_gains[12:] + delta_arm_gains
-    #         adaptive_arm_d_gains = 2 * (adaptive_arm_p_gains ** 0.5)
-    #         arm_torques = adaptive_arm_p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped)[:, 12:] - adaptive_arm_d_gains * self.dof_vel_wo_gripper[:, 12:]
-    #         torques = torch.cat([leg_torques, arm_torques, self.gripper_torques_zero], dim=-1)
-    #     else:
-    #         torques = torch.cat([default_torques, self.gripper_torques_zero], dim=-1)
-        
-    #     if self.cfg.control.torque_supervision:
-    #         self.arm_ee_control_torques = self.get_arm_ee_control_torques()
-        
-    #     # print("torque limit!!!!!!!!!!!!!!!!",-self.torque_limits, self.torque_limits)
-    #     # print("torque!!!!!!!!!!!!!!!!!!!!!!!",torques)
-    #     return torch.clip(torques, -self.torque_limits, self.torque_limits)
-
     def _compute_torques(self, actions):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
@@ -1468,7 +1425,11 @@ class WidowGo1(LeggedRobot):
             [torch.Tensor]: Torques sent to the simulation
         """
         # pd controller
+        if self.cfg.control.adaptive_arm_gains:
+            actions, delta_arm_gains = actions[:, :12+6], actions[:, 12+6:]
+        
         actions_scaled = actions * self.motor_strength * self.action_scale
+
         self.dof_pos_wo_gripper_wrapped[:] = self.dof_pos_wo_gripper
         # print('self.dof_pos_wo_gripper',self.dof_pos_wo_gripper)
         # print('self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
@@ -1476,10 +1437,51 @@ class WidowGo1(LeggedRobot):
         # print('------self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
 
         default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
+        
+        if getattr(self.cfg.control, "arm_gravity_comp", True):  
+            g_torque = self.get_g_torques()    
+            default_torques[:, 12:] += g_torque
 
-        torques = torch.cat([default_torques, self.gripper_torques_zero], dim=-1)
-
+        if self.cfg.control.adaptive_arm_gains:
+            leg_torques = default_torques[:, :12]
+            adaptive_arm_p_gains = self.p_gains[12:] + delta_arm_gains
+            adaptive_arm_d_gains = 2 * (adaptive_arm_p_gains ** 0.5)
+            arm_torques = adaptive_arm_p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped)[:, 12:] - adaptive_arm_d_gains * self.dof_vel_wo_gripper[:, 12:]
+            torques = torch.cat([leg_torques, arm_torques, self.gripper_torques_zero], dim=-1)
+        else:
+            torques = torch.cat([default_torques, self.gripper_torques_zero], dim=-1)
+        
+        if self.cfg.control.torque_supervision:
+            self.arm_ee_control_torques = self.get_arm_ee_control_torques()
+        
+        # print("torque limit!!!!!!!!!!!!!!!!",-self.torque_limits, self.torque_limits)
+        # print("torque!!!!!!!!!!!!!!!!!!!!!!!",torques)
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
+
+    # def _compute_torques(self, actions):
+    #     """ Compute torques from actions.
+    #         Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
+    #         [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
+
+    #     Args:
+    #         actions (torch.Tensor): Actions
+
+    #     Returns:
+    #         [torch.Tensor]: Torques sent to the simulation
+    #     """
+    #     # pd controller
+    #     actions_scaled = actions * self.motor_strength * self.action_scale
+    #     self.dof_pos_wo_gripper_wrapped[:] = self.dof_pos_wo_gripper
+    #     # print('self.dof_pos_wo_gripper',self.dof_pos_wo_gripper)
+    #     # print('self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
+    #     self.dof_pos_wo_gripper_wrapped[:, -8] = torch_wrap_to_pi_minuspi(self.dof_pos_wo_gripper_wrapped[:, -8])
+    #     # print('------self.dof_pos_wo_gripper_wrapped[0:]',self.dof_pos_wo_gripper_wrapped[0:])
+
+    #     default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
+
+    #     torques = torch.cat([default_torques, self.gripper_torques_zero], dim=-1)
+
+    #     return torch.clip(torques, -self.torque_limits, self.torque_limits)
     
     def _get_init_start_ee_sphere(self):
         init_start_ee_cart = torch.zeros(self.num_envs, 3, dtype=torch.float, device=self.device, requires_grad=False)
