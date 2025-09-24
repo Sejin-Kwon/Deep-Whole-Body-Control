@@ -128,7 +128,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 20 #10 # episode length in seconds
+        episode_length_s = 10 #10 # episode length in seconds
 
         reorder_dofs = True
 
@@ -165,12 +165,12 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # PD Drive parameters:
         # Kp = [ 5.1876, 5.1876, 3.4584, 0.1729, 1.7292, 0.1729]
         # Kd = [ 0.4323, 0.4323, 0.0865, 0,      0.0864, 0]
-        stiffness = {'joint': 50, 'widow': 12}  # [N*m/rad]    'widow': 5
-        damping = {'joint': 1, 'widow': 0.8}     # [N*m*s/rad]   'widow': 0.5
+        stiffness = {'joint': 50, 'widow': 5}  # [N*m/rad]    'widow': 5
+        damping = {'joint': 1, 'widow': 0.5}     # [N*m*s/rad]   'widow': 0.5
         adaptive_arm_gains = False
         # action scale: target angle = actionScale * action + defaultAngle   
-        # action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0, 0, 0]
-        action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0.3, 0.3, 0.3]
+        action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0, 0, 0]
+        # action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0.3, 0.3, 0.3]
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
         torque_supervision = False

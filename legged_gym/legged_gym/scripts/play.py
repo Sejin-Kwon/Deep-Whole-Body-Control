@@ -151,7 +151,9 @@ def play(args):
         else:
             actions = policy(obs.detach(), hist_encoding=True)
         
-        # actions = torch.ones_like(actions)
+        # print(actions.shape)
+        # actions[:,12:] =0.1
+        # print(actions)
         if i % 50 == 0:
             a = actions[0].detach().cpu().numpy()
             print("[dbg] act[0] abs-mean:", float(np.mean(np.abs(a))),"leg-max:", float(np.max(np.abs(a[:12]))))
@@ -161,11 +163,11 @@ def play(args):
         # env.commands[:, 0] = 0.3
         # env.commands[:, 1] = 0.0
         # env.commands[:, 2] = 0.3
-        # env.curr_ee_goal_sphere[:, 0] = 0.3
-        # env.curr_ee_goal_sphere[:, 1] = 0.0
+        # env.curr_ee_goal_sphere[:, 0] = 0.9
+        # env.curr_ee_goal_sphere[:, 1] = 0.5
         # env.curr_ee_goal_sphere[:, 2] = 0.0
-        env.commands[:, 0] = 0.9   # x 전진 m/s
-        env.commands[:, 2] = 0.3   # yaw rad/s
+        # env.commands[:, 0] = 0.9   # x 전진 m/s
+        # env.commands[:, 2] = 0.3   # yaw rad/s
         if i % 50 == 0:
             command_detached = env.commands[0].detach().cpu().numpy()
             print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')
