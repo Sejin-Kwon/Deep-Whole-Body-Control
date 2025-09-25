@@ -31,7 +31,7 @@
 from time import time
 import torch
 import torch.nn as nn
-import torch.optim as optim
+from torch.optim import Adam
 
 from rsl_rl.modules import ActorCritic
 from rsl_rl.storage import RolloutStorage
@@ -72,11 +72,11 @@ class PPO:
         self.actor_critic = actor_critic
         self.actor_critic.to(self.device)
         self.storage = None # initialized later
-        self.optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
+        self.optimizer = Adam(self.actor_critic.parameters(), lr=learning_rate)
         self.transition = RolloutStorage.Transition()
 
         # Adaptation
-        self.hist_encoder_optimizer = optim.Adam(self.actor_critic.actor.history_encoder.parameters(), lr=learning_rate)
+        self.hist_encoder_optimizer = Adam(self.actor_critic.actor.history_encoder.parameters(), lr=learning_rate)
         self.priv_reg_coef_schedual = priv_reg_coef_schedual
 
         # PPO parameters

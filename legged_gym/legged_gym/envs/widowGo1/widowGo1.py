@@ -234,6 +234,7 @@ class WidowGo1(LeggedRobot):
         self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.terrain = Terrain_Perlin(self.cfg.terrain)
         self._create_trimesh()
+        self.has_box = self.cfg.box.enabled
         self._create_envs()
     
     def _create_trimesh(self):
@@ -318,11 +319,12 @@ class WidowGo1(LeggedRobot):
         self.gripper_idx = self.body_names_to_idx["wx250s/ee_gripper_link"]
 
         # box
-        asset_options = gymapi.AssetOptions()
-        asset_options.density = 1000
-        asset_options.fix_base_link = False
-        asset_options.disable_gravity = False
-        box_asset = self.gym.create_box(self.sim, self.cfg.box.box_size, self.cfg.box.box_size, self.cfg.box.box_size, asset_options)
+        if self.has_box:
+            asset_options = gymapi.AssetOptions()
+            asset_options.density = 1000
+            asset_options.fix_base_link = False
+            asset_options.disable_gravity = False
+            box_asset = self.gym.create_box(self.sim, self.cfg.box.box_size, self.cfg.box.box_size, self.cfg.box.box_size, asset_options)
 
         print('------------------------------------------------------')
         print('num_actions: {}'.format(self.num_actions))
@@ -342,18 +344,20 @@ class WidowGo1(LeggedRobot):
         self.base_init_state = to_torch(base_init_state_list, device=self.device, requires_grad=False)
         start_pose = gymapi.Transform()
         start_pose.p = gymapi.Vec3(*self.base_init_state[:3])
-        box_start_pose = gymapi.Transform()
+        if self.has_box:
+            box_start_pose = gymapi.Transform()
 
         self._get_env_origins()
         env_lower = gymapi.Vec3(0., 0., 0.)
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
-        self.box_actor_handles = []
-        box_body_indices = []
+        if self.has_box:
+            self.box_actor_handles = []
+            box_body_indices = []
         self.envs = []
         self.mass_params_tensor = torch.zeros(self.num_envs, 5, dtype=torch.float, device=self.device, requires_grad=False)
         for i in range(self.num_envs):
-            # create env instance
+            # create env(grid space) instance and add to envs[]
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
             self.envs.append(env_handle)
 
@@ -362,13 +366,19 @@ class WidowGo1(LeggedRobot):
             pos[:2] += torch_rand_float(-self.cfg.terrain.origin_perturb_range, self.cfg.terrain.origin_perturb_range, (2,1), device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
             
+            # domain randomization for rigid_shape_props (friction)
             rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
             self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
+            
+            # create actor and add to actor_handles[]
             robot_dog_handle = self.gym.create_actor(env_handle, robot_asset, start_pose, "robot_dog", i, self.cfg.asset.self_collisions, 0)
             self.actor_handles.append(robot_dog_handle)
 
+            # domain randomization for dof_props (pos limit, vel limit, torque limit)
             dof_props = self._process_dof_props(dof_props_asset, i)
             self.gym.set_actor_dof_properties(env_handle, robot_dog_handle, dof_props)
+            
+            # domain randomoztion for body_props (mass)
             body_props = self.gym.get_actor_rigid_body_properties(env_handle, robot_dog_handle)
             body_props, mass_params = self._process_rigid_body_props(body_props, i)
             self.gym.set_actor_rigid_body_properties(env_handle, robot_dog_handle, body_props, recomputeInertia=True)
@@ -376,26 +386,32 @@ class WidowGo1(LeggedRobot):
             self.mass_params_tensor[i, :] = torch.from_numpy(mass_params).to(self.device)
 
             # box
-            box_pos = pos.clone()
-            box_pos[0] = self.box_env_origins_x
-            box_pos[1] += self.box_env_origins_delta_y[i]
-            box_pos[2] = self.box_env_origins_z
-            box_start_pose.p = gymapi.Vec3(*box_pos)
-            box_handle = self.gym.create_actor(env_handle, box_asset, box_start_pose, "box", i, self.cfg.asset.self_collisions, 0)
-            self.box_actor_handles.append(box_handle)
+            if self.has_box:
+                box_pos = pos.clone()
+                box_pos[0] = self.box_env_origins_x
+                box_pos[1] += self.box_env_origins_delta_y[i]
+                box_pos[2] = self.box_env_origins_z
+                box_start_pose.p = gymapi.Vec3(*box_pos)
+                box_handle = self.gym.create_actor(env_handle, box_asset, box_start_pose, "box", i, self.cfg.asset.self_collisions, 0)
+                self.box_actor_handles.append(box_handle)
 
-            box_body_props = self.gym.get_actor_rigid_body_properties(env_handle, box_handle)
-            box_body_props, _ = self._box_process_rigid_body_props(box_body_props, i)
-            self.gym.set_actor_rigid_body_properties(env_handle, box_handle, box_body_props, recomputeInertia=True)
+                box_body_props = self.gym.get_actor_rigid_body_properties(env_handle, box_handle)
+                box_body_props, _ = self._box_process_rigid_body_props(box_body_props, i)
+                self.gym.set_actor_rigid_body_properties(env_handle, box_handle, box_body_props, recomputeInertia=True)
 
-            box_body_idx = self.gym.get_actor_rigid_body_index(env_handle, box_handle, 0, gymapi.DOMAIN_SIM)
-            box_body_indices.append(box_body_idx)
+                box_body_idx = self.gym.get_actor_rigid_body_index(env_handle, box_handle, 0, gymapi.DOMAIN_SIM)
+                box_body_indices.append(box_body_idx)
         
-        assert(np.all(np.array(self.actor_handles) == 0))
-        assert(np.all(np.array(self.box_actor_handles) == 1))
-        assert(np.all(np.array(box_body_indices) % (self.num_bodies + 1) == self.num_bodies))
-        self.robot_actor_indices = torch.arange(0, 2 * self.num_envs, 2, device=self.device)
-        self.box_actor_indices = torch.arange(1, 2 * self.num_envs, 2, device=self.device)
+        if self.has_box:
+            assert(np.all(np.array(self.actor_handles) == 0))
+            assert(np.all(np.array(self.box_actor_handles) == 1))
+            assert(np.all(np.array(box_body_indices) % (self.num_bodies + 1) == self.num_bodies))
+            self.box_actor_indices = torch.arange(1, 2 * self.num_envs, 2, device=self.device)
+            self.box_actor_indices = torch.arange(1, 2 * self.num_envs, 2, device=self.device)
+            self.robot_actor_indices = torch.arange(0, 2 * self.num_envs, 2, device=self.device)
+            # print("box_actor_indices !!!!!!!!!!!!!!!! ",self.box_actor_indices )
+            # print("robot_actor_indices !!!!!!!!!!!!!!!!",self.robot_actor_indices)
+       
 
         self.friction_coeffs_tensor = self.friction_coeffs.to(self.device).squeeze(-1)
 
@@ -520,9 +536,15 @@ class WidowGo1(LeggedRobot):
 
         # create some wrapper tensors for different slices
         self.force_sensor_tensor = gymtorch.wrap_tensor(force_sensor_tensor).view(self.num_envs, 4, 6)
-        self._root_states = gymtorch.wrap_tensor(actor_root_state).view(self.num_envs, 2, 13) # 2 actors
-        self.root_states = self._root_states[:, 0, :]
-        self.box_root_state = self._root_states[:, 1, :]
+        
+        if self.has_box:
+            self._root_states = gymtorch.wrap_tensor(actor_root_state).view(self.num_envs, 2, 13) # 2 actors
+            self.root_states = self._root_states[:, 0, :]
+            self.box_root_state = self._root_states[:, 1, :]
+        else:
+            self._root_states = gymtorch.wrap_tensor(actor_root_state).view(self.num_envs, 1, 13) # 1 actor
+            self.root_states = self._root_states[:, 0, :]
+        
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 0]
         self.dof_pos_wrapped = self.dof_pos.clone()
@@ -539,13 +561,18 @@ class WidowGo1(LeggedRobot):
         self.obs_history_buf = torch.zeros(self.num_envs, self.cfg.env.history_len, self.cfg.env.num_proprio, device=self.device, dtype=torch.float)
         self.action_history_buf = torch.zeros(self.num_envs, self.action_delay + 2, self.num_actions, device=self.device, dtype=torch.float)
 
-        self._contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, self.num_bodies + 1, 3) # shape: num_envs, num_bodies, xyz axis
-        self.contact_forces = self._contact_forces[:, :-1, :]
-        self.box_contact_force = self._contact_forces[:, -1, :]
-
-        self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state_tensor).view(self.num_envs, self.num_bodies + 1, 13)
-        self.rigid_body_state = self._rigid_body_state[:, :-1, :]
-        self.box_rigid_body_state = self._rigid_body_state[:, -1, :]
+        if self.has_box:
+            self._contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, self.num_bodies + 1, 3) # shape: num_envs, num_bodies, xyz axis
+            self.contact_forces = self._contact_forces[:, :-1, :]
+            self.box_contact_force = self._contact_forces[:, -1, :]
+            self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state_tensor).view(self.num_envs, self.num_bodies + 1, 13)
+            self.rigid_body_state = self._rigid_body_state[:, :-1, :]
+            self.box_rigid_body_state = self._rigid_body_state[:, -1, :]
+        else: 
+            self._contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, self.num_bodies, 3) # shape: num_envs, num_bodies, xyz axis
+            self.contact_forces = self._contact_forces
+            self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state_tensor).view(self.num_envs, self.num_bodies, 13)
+            self.rigid_body_state = self._rigid_body_state
 
         self.mm_whole = gymtorch.wrap_tensor(mass_matrix_tensor)
         self.jacobian_whole = gymtorch.wrap_tensor(jacobian_tensor)
@@ -560,7 +587,8 @@ class WidowGo1(LeggedRobot):
         self.arm_osc_kd = torch.tensor(self.cfg.arm.osc_kd, device=self.device, dtype=torch.float)
 
         # box info & target_ee info
-        self.box_pos = self.box_root_state[:, 0:3]
+        if self.has_box:
+            self.box_pos = self.box_root_state[:, 0:3]
         self.down_dir = torch.tensor([0, 0, -1], device=self.device, dtype=torch.float).view(3, 1)
         self.ee_orn_des = torch.tensor([ 0, 0.7071068, 0, 0.7071068 ], device=self.device).repeat((self.num_envs, 1))
         self.grasp_offset = self.cfg.arm.grasp_offset
@@ -604,9 +632,10 @@ class WidowGo1(LeggedRobot):
         print(f'rigid_body_state shape: {self.rigid_body_state.shape}')
         print(f'mm_whole shape: {self.mm_whole.shape}')
         print(f'jacobian_whole shape: {self.jacobian_whole.shape}')
-        print(f'box_root_state shape: {self.box_root_state.shape}')
-        print(f'box_contact_force shape: {self.box_contact_force.shape}')
-        print(f'box_rigid_body_state shape: {self.box_rigid_body_state.shape}')
+        if self.has_box:
+            print(f'box_root_state shape: {self.box_root_state.shape}')
+            print(f'box_contact_force shape: {self.box_contact_force.shape}')
+            print(f'box_rigid_body_state shape: {self.box_rigid_body_state.shape}')
         print('------------------------------------------------------')
         
         # initialize some data used later on
@@ -708,6 +737,7 @@ class WidowGo1(LeggedRobot):
         # update curriculum
         if self.cfg.terrain.curriculum:
             self._update_terrain_curriculum(env_ids)
+        #TODO: have to check command_curriculum
         # avoid updating command curriculum at each step since the maximum command is common to all envs
         # if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
         #     self.update_command_curriculum(env_ids)
@@ -767,9 +797,10 @@ class WidowGo1(LeggedRobot):
         self.root_states[env_ids, :3] += self.env_origins[env_ids]
         self.root_states[env_ids, :2] += torch_rand_float(-self.cfg.terrain.origin_perturb_range, self.cfg.terrain.origin_perturb_range, (len(env_ids), 2), device=self.device) # xy position within 1m of the center
     
-        self.box_root_state[env_ids, 0] = self.box_env_origins_x
-        self.box_root_state[env_ids, 1] = self.root_states[env_ids, 1] + self.box_env_origins_delta_y[env_ids]
-        self.box_root_state[env_ids, 2] = self.box_env_origins_z
+        if self.has_box:
+            self.box_root_state[env_ids, 0] = self.box_env_origins_x
+            self.box_root_state[env_ids, 1] = self.root_states[env_ids, 1] + self.box_env_origins_delta_y[env_ids]
+            self.box_root_state[env_ids, 2] = self.box_env_origins_z
         
         # base velocities
         self.root_states[env_ids, 7:13] = torch_rand_float(-self.cfg.terrain.init_vel_perturb_range, self.cfg.terrain.init_vel_perturb_range, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
@@ -922,6 +953,7 @@ class WidowGo1(LeggedRobot):
         # 
         command_env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         # target_ee_env_ids = (self.episode_length_buf % int(self.cfg.target_ee.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
+        # (self.episode_length_buf % ( 3.0(s)/0.02(s)==150) == 0))
 
         self.extras["metric"]["lin_vel_x_error_rmse"]= torch.sqrt(torch.mean(torch.square(self.commands[:, 0] - self.base_lin_vel[:, 0])))
         # self.extras["metric"]["lin_vel_y_error"]= torch.mean(torch.sqrt(torch.sum(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1]))))

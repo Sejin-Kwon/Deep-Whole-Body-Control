@@ -114,7 +114,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         clip_actions = 100.
 
     class env:
-        num_envs = 3000
+        num_envs = 1000
         num_actions = 12 + 6 #CAUTION
         num_torques = 12 + 6
         action_delay = 2  # -1 for no delay
@@ -183,6 +183,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         fix_base_link = False
     
     class box:
+        enabled = False
         box_size = 0.1
         randomize_base_mass = True
         added_mass_range = [-0.001, 0.050]

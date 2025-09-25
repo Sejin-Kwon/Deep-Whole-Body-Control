@@ -1,0 +1,27 @@
+{
+    "python.languageServer": "Pylance",
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python-envs.pythonProjects": [],
+    "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "warning",
+    "reportUndefinedVariable": "warning",
+    "reportCallIssue": "none",
+    "reportArgumentType": "none",
+    "reportUnknownMemberType": "none",
+    "reportGeneralTypeIssues": "warning",
+    "reportAttributeAccessIssue": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportIndexIssue": "none",
+    "reportOptionalSubscript": "none",
+    "reportAssignmentType": "none",
+    "reportOptionalIterable": "warning",
+    "reportPrivateImportUsage": "warning"
+    
+
+  },
+  
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.useLibraryCodeForTypes": true
+
+}
