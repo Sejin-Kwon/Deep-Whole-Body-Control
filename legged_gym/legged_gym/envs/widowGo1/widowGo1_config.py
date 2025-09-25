@@ -32,7 +32,7 @@ from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobot
 import numpy as np
 import torch
 
-RESUME = True
+RESUME = False
 
 class WidowGo1RoughCfg( LeggedRobotCfg ):
     # class target_ee:
@@ -114,7 +114,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         clip_actions = 100.
 
     class env:
-        num_envs = 5000
+        num_envs = 3000
         num_actions = 12 + 6 #CAUTION
         num_torques = 12 + 6
         action_delay = 2  # -1 for no delay

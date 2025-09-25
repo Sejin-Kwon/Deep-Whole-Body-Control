@@ -39,7 +39,7 @@ import torch
 import wandb
 
 def train(args):
-    wandb.init(project='manip-loco', name=str(args.exptid) + '_' + args.run_name)
+    wandb.init(project='manip-loco', name=args.run_name)
     wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1_config.py", policy="now")
     wandb.save(LEGGED_GYM_ENVS_DIR + "/widowGo1/widowGo1.py", policy="now")
     wandb.save(LEGGED_GYM_ROOT_DIR + "../rsl_rl/modules/actor_critic.py", policy="now")
