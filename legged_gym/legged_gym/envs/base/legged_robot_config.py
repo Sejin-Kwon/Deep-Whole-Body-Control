@@ -45,7 +45,7 @@ class LeggedRobotCfg(BaseConfig):
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
-        curriculum = True
+        curriculum = False
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
@@ -53,8 +53,8 @@ class LeggedRobotCfg(BaseConfig):
         measure_heights = True
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-        selected = False # select a unique terrain type and pass all arguments
-        terrain_kwargs = None # Dict of arguments for selected terrain
+        selected = True # select a unique terrain type and pass all arguments
+        terrain_kwargs = "smooth slope" # Dict of arguments for selected terrain
         max_init_terrain_level = 5 # starting curriculum state
         terrain_length = 8.
         terrain_width = 8.
@@ -115,7 +115,7 @@ class LeggedRobotCfg(BaseConfig):
         max_angular_velocity = 1000.
         max_linear_velocity = 1000.
         armature = 0.
-        thickness = 0.01
+        thickness = 0.01  #TODO: check when it comes to trimesh condition( foot slip, foot lodged) => have to increase thickness!
 
     class domain_rand:
         randomize_friction = True

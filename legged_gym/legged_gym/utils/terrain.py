@@ -34,6 +34,7 @@ from scipy import interpolate
 
 from isaacgym import terrain_utils
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg
+from legged_gym.envs.widowGo1.widowGo1_config import WidowGo1RoughCfg
 
 import matplotlib.pyplot as plt
 
@@ -99,28 +100,41 @@ class Terrain_Perlin:
         return noise
 
 class Terrain:
-    def __init__(self, cfg: LeggedRobotCfg.terrain, num_robots) -> None:
+    def __init__(self, cfg: WidowGo1RoughCfg.terrain, num_robots) -> None:
 
         self.cfg = cfg
         self.num_robots = num_robots
         self.type = cfg.mesh_type
         if self.type in ["none", 'plane']:
             return
+        
+        # A tile(subterrain) size: world size (self.env_length * self.env_width) (m^2)
         self.env_length = cfg.terrain_length
         self.env_width = cfg.terrain_width
+
+        # proportions for category to cumulative distribution 
         self.proportions = [np.sum(cfg.terrain_proportions[:i+1]) for i in range(len(cfg.terrain_proportions))]
 
-        self.cfg.num_sub_terrains = cfg.num_rows * cfg.num_cols
+        # # of subterrains
+        self.num_sub_terrains = cfg.num_rows * cfg.num_cols
+
+        # Set the origin of the sub terrain (x,y,z)
         self.env_origins = np.zeros((cfg.num_rows, cfg.num_cols, 3))
 
+        # width and length per sub terrain (m) -> (px) # ex) 8m -> 80px
         self.width_per_env_pixels = int(self.env_width / cfg.horizontal_scale)
         self.length_per_env_pixels = int(self.env_length / cfg.horizontal_scale)
 
+        # ex) 25m -> 250px
         self.border = int(cfg.border_size/self.cfg.horizontal_scale)
+
+        # Resolution of whole terrain 
         self.tot_cols = int(cfg.num_cols * self.width_per_env_pixels) + 2 * self.border
         self.tot_rows = int(cfg.num_rows * self.length_per_env_pixels) + 2 * self.border
 
+        # initialized whole terrain height map to 0        
         self.height_field_raw = np.zeros((self.tot_rows , self.tot_cols), dtype=np.int16)
+
         if cfg.curriculum:
             self.curiculum()
         elif cfg.selected:
@@ -136,7 +150,7 @@ class Terrain:
                                                                                             self.cfg.slope_treshold)
     
     def randomized_terrain(self):
-        for k in range(self.cfg.num_sub_terrains):
+        for k in range(self.num_sub_terrains):
             # Env coordinates in the world
             (i, j) = np.unravel_index(k, (self.cfg.num_rows, self.cfg.num_cols))
 
@@ -156,7 +170,7 @@ class Terrain:
 
     def selected_terrain(self):
         terrain_type = self.cfg.terrain_kwargs.pop('type')
-        for k in range(self.cfg.num_sub_terrains):
+        for k in range(self.num_sub_terrains):
             # Env coordinates in the world
             (i, j) = np.unravel_index(k, (self.cfg.num_rows, self.cfg.num_cols))
 

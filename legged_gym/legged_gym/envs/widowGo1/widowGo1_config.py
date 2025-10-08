@@ -33,6 +33,7 @@ import numpy as np
 import torch
 
 RESUME = False
+TERRAIN_PERLIN = False
 
 class WidowGo1RoughCfg( LeggedRobotCfg ):
     # class target_ee:
@@ -84,7 +85,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
     class commands:
         curriculum = True
         num_commands = 3
-        resampling_time = 3. # time before command are changed[s]
+        resampling_time = 10. # time before command are changed[s]
 
         lin_vel_x_schedule = [0, 1]
         ang_vel_yaw_schedule = [0, 1]
@@ -126,7 +127,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 10 # episode length in seconds
+        episode_length_s = 20 # episode length in seconds
 
         reorder_dofs = True
 
@@ -200,15 +201,21 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
 
     class domain_rand:
         observe_priv = True
+        
         randomize_friction = True
-        friction_range = [-0.5, 3.0]
-        randomize_base_mass = True
-        added_mass_range = [-0.5, 2.5]
-        randomize_base_com = True
+        friction_range = [0.5, 1.25]
+        # friction_range = [-0.5, 3.0]
+        
+        randomize_base_mass = False
+        added_mass_range = [-1., 1.]
+        # added_mass_range = [-0.5, 2.5]
+        
+        randomize_base_com = False
         added_com_range_x = [-0.15, 0.15]
         added_com_range_y = [-0.15, 0.15]
         added_com_range_z = [-0.15, 0.15]
-        randomize_motor = True
+        
+        randomize_motor = False
         leg_motor_strength_range = [0.7, 1.3]
         arm_motor_strength_range = [0.7, 1.3]
 
@@ -220,7 +227,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # arm_ema_range = [0.05, 0.25]
 
         push_robots = True
-        push_interval_s = 3
+        push_interval_s = 10
         max_push_vel_xy = 0.5
 
         cube_y_range = [0.2, 0.4]
@@ -277,44 +284,80 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         base_height_target = 0.25
         max_contact_force = 100. # forces above this value are penalized
 
+    # class viewer:
+    #     pos = [-20, 0, 20]  # [m]
+    #     lookat = [0, 0, -2]  # [m]
     class viewer:
-        pos = [-20, 0, 20]  # [m]
-        lookat = [0, 0, -2]  # [m]
+        ref_env = 0
+        pos = [10, 0, 6]  # [m]
+        lookat = [11., 5, 3.]  # [m]
 
     
     class termination:
-        r_threshold = 0.78
-        p_threshold = 0.60
-        z_threshold = 0.325
+        # r_threshold = 0.78
+        # p_threshold = 0.60
+        # z_threshold = 0.325
+        z_threshold = -0.25
 
     class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
-        add_slopes = True
-        slope_incline = 0.2
-        horizontal_scale = 0.025 # [m]
-        vertical_scale = 1 / 100000 # [m]
-        border_size = 0 # [m]
-        tot_cols = 600
-        tot_rows = 10000
-        zScale = 0.15
-        transform_x = - tot_cols * horizontal_scale / 2
-        transform_y = - tot_rows * horizontal_scale / 2
-        transform_z = 0.0
+        
+        if TERRAIN_PERLIN:
+            mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+            add_slopes = True
+            slope_incline = 0.2
+            horizontal_scale = 0.025 # [m]
+            vertical_scale = 1 / 100000 # [m]
+            border_size = 0 # [m]
+            tot_cols = 600
+            tot_rows = 10000
+            zScale = 0.15
+            transform_x = - tot_cols * horizontal_scale / 2
+            transform_y = - tot_rows * horizontal_scale / 2
+            transform_z = 0.0
 
-        curriculum = False
-        static_friction = 1.0
-        dynamic_friction = 1.0
-        restitution = 0.0
-        # rough terrain only:
-        measure_heights = False
-        measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
-        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-        # trimesh only:
-        slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
+            curriculum = True
+            static_friction = 1.0
+            dynamic_friction = 1.0
+            restitution = 0.0
+            # rough terrain only:
+            measure_heights = False
+            measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+            measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+            # trimesh only:
+            slope_treshold = 100000000 # slopes above this threshold will be corrected to vertical surfaces
 
-        origin_perturb_range = 0.5
-        init_vel_perturb_range = 0.1
-
+            origin_perturb_range = 0.5
+            init_vel_perturb_range = 0.1
+        else:
+            mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+            horizontal_scale = 0.1 # [m]
+            vertical_scale = 0.005 # [m]
+            border_size = 25 # [m]
+            curriculum = True
+            static_friction = 1.0
+            dynamic_friction = 1.0
+            restitution = 0.
+            # rough terrain only:
+            measure_heights = True
+            measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+            measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+            selected = False # select a unique terrain type and pass all arguments
+            terrain_kwargs = None #"smooth slope" # Dict of arguments for selected terrain
+            max_init_terrain_level = 5 # starting curriculum state
+            terrain_length = 8.
+            terrain_width = 8.
+            num_rows= 6 # number of terrain rows (levels)
+            num_cols = 6 # number of terrain cols (types)
+            #### training mode 
+            # num_rows= 10 # number of terrain rows (levels)
+            # num_cols = 20 # number of terrain cols (types)
+            ####
+            # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
+            terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
+            # trimesh only:
+            slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
+            origin_perturb_range = 1
+            init_vel_perturb_range = 0.5
 
 class WidowGo1RoughCfgPPO(LeggedRobotCfgPPO):
     seed = 1
