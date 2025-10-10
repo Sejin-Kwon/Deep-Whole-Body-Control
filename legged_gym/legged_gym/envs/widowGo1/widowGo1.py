@@ -802,7 +802,7 @@ class WidowGo1(LeggedRobot):
         if len(env_ids) == 0:
             return
 
-        print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
+        # print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
         # update curriculum
         if self.cfg.terrain.curriculum:
             self._update_terrain_curriculum(env_ids)
@@ -985,10 +985,10 @@ class WidowGo1(LeggedRobot):
         v = self.root_states[0, 7:10].detach().cpu().numpy()
         w = self.root_states[0,10:13].detach().cpu().numpy()
 
-        print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
-                f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
-                f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
-                f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
+        # print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
+        #         f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
+        #         f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
+        #         f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
         # prepare quantities
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
@@ -1094,11 +1094,11 @@ class WidowGo1(LeggedRobot):
         # if len(self.reset_triggers) > 0:
         #     print('reset_triggers: ', self.reset_triggers)
 
-        print(f"[dbg] step={self.common_step_counter} env0: "
-                f"z={self.root_states[0,2].item():.3f} "
-                f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        # print(f"[dbg] step={self.common_step_counter} env0: "
+        #         f"z={self.root_states[0,2].item():.3f} "
+        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
+        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         # self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
