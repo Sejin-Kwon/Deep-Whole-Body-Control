@@ -46,12 +46,15 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
     #         pos_y = [0, 2 * np.pi]    # min max [rad/s]
 
     class goal_ee:
+        fixed_point_mode = True
+        refresh_mode = "episode"  # {"episode", "half"}
         num_commands = 3
         traj_time = [1, 3]
         hold_time = [0.5, 2]
         collision_upper_limits = [0.3, 0.15, 0.05 - 0.165]
         collision_lower_limits = [-0.2, -0.15, -0.35 - 0.165]
-        underground_limit = -0.57
+        # underground_limit = -0.57
+        underground_limit = 0.5
         num_collision_check_samples = 10
         command_mode = 'sphere'
 
@@ -68,6 +71,9 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             init_pos_l = [0.6, 0.6]
             init_pos_p = [1 * np.pi / 4, 1 * np.pi / 4]
             init_pos_y = [-1 * np.pi / 6, 1 * np.pi / 6]
+            # init_pos_l = [0.25, 0.45]
+            # init_pos_p = [-1 * np.pi / 6, 1 * np.pi / 6]
+            # init_pos_y = [-1 * np.pi / 6, 1 * np.pi / 6]
 
             final_delta_orn = [[-0, 0], [-0, 0], [-0, 0]]
 
@@ -297,7 +303,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # r_threshold = 0.78
         # p_threshold = 0.60
         # z_threshold = 0.325
-        z_threshold = -0.25
+        z_threshold = -0.21
 
     class terrain:
         

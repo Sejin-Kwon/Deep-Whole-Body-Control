@@ -228,7 +228,7 @@ class OnPolicyRunner:
 
         wandb_dict['Loss/value_function'] = locs['mean_value_loss']
         wandb_dict['Loss/surrogate'] = locs['mean_surrogate_loss']
-        wandb_dict['Loss/hist_latent_loss'] = locs['mean_hist_latent_loss']
+        # wandb_dict['Loss/hist_latent_loss'] = locs['mean_hist_latent_loss']
         wandb_dict['Loss/priv_reg_loss'] = locs['mean_priv_reg_loss']
         wandb_dict['Loss/priv_ref_lambda'] = locs['priv_reg_coef']
         wandb_dict['Loss/arm_torques_loss'] = locs['mean_arm_torques_loss']
@@ -260,7 +260,7 @@ class OnPolicyRunner:
                             'collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
                           f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""
                           f"""{'Surrogate loss:':>{pad}} {locs['mean_surrogate_loss']:.4f}\n"""
-                          f"""{'History latent supervision loss:':>{pad}} {locs['mean_hist_latent_loss']:.4f}\n"""
+                        #   f"""{'History latent supervision loss:':>{pad}} {locs['mean_hist_latent_loss']:.4f}\n"""
                           f"""{'Privileged info regularizer loss:':>{pad}} {locs['mean_priv_reg_loss']:.4f}\n"""
                           f"""{'Privileged info regularizer lambda:':>{pad}} {locs['priv_reg_coef']:.4f}\n"""
                           f"""{'Leg mean action noise std:':>{pad}} {leg_mean_std.item():.2f}\n"""
@@ -278,7 +278,7 @@ class OnPolicyRunner:
                             'collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
                           f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""
                           f"""{'Surrogate loss:':>{pad}} {locs['mean_surrogate_loss']:.4f}\n"""
-                          f"""{'History latent supervision loss:':>{pad}} {locs['hist_latent_loss']:.4f}\n"""
+                        #   f"""{'History latent supervision loss:':>{pad}} {locs['hist_latent_loss']:.4f}\n"""
                           f"""{'Leg mean action noise std:':>{pad}} {leg_mean_std.item():.2f}\n"""
                           f"""{'Arm mean action noise std:':>{pad}} {arm_mean_std.item():.2f}\n"""
                           f"""{'action noise std distribution:':>{pad}} {std_numpy.tolist()}\n""")

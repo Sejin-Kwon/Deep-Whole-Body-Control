@@ -688,7 +688,8 @@ class WidowGo1(LeggedRobot):
         self.sphere_error_scale = torch.tensor(self.cfg.goal_ee.sphere_error_scale, device=self.device)
         self.orn_error_scale = torch.tensor(self.cfg.goal_ee.orn_error_scale, device=self.device)
         self.arm_base_overhead = torch.tensor([0., 0., 0.165], device=self.device)
-        self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
+        # self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
+        self.z_invariant_offset = torch.tensor([0.23], device=self.device).repeat(self.num_envs, 1)
 
         print('------------------------------------------------------')
         print(f'root_states shape: {self.root_states.shape}')
@@ -800,7 +801,7 @@ class WidowGo1(LeggedRobot):
         """
         if len(env_ids) == 0:
             return
-        
+
         print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
         # update curriculum
         if self.cfg.terrain.curriculum:
@@ -825,7 +826,11 @@ class WidowGo1(LeggedRobot):
             command_env_ids = self.time_out_buf.nonzero(as_tuple=False).flatten()
         self._resample_commands(command_env_ids)
         # self._resample_target_ee(env_ids)
-        self._resample_ee_goal(env_ids, is_init=True)
+
+        if self.cfg.goal_ee.fixed_point_mode:
+            self._sample_single_ee_goal(env_ids)
+            self.goal_timer[env_ids] = 0.0
+        # self._resample_ee_goal(env_ids, is_init=True)
 
         # reset buffers
         self.last_actions[env_ids] = 0.
@@ -1021,7 +1026,7 @@ class WidowGo1(LeggedRobot):
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self.gym.clear_lines(self.viewer)
             self._draw_debug_vis()
-            self._draw_ee_goal()
+            # self._draw_ee_goal()
     
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations
@@ -1071,8 +1076,8 @@ class WidowGo1(LeggedRobot):
         y = euler[:, 2]
         z = self.root_states[:, 2]
 
-        r_threshold_buff = ((r > 0.45) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -0.45) & (self.curr_ee_goal[:, 2] <= 0))
-        p_threshold_buff = ((p > 0.3) & (self.curr_ee_goal[:, 1] >= 0)) | ((p < -0.3) & (self.curr_ee_goal[:, 1] <= 0))
+        r_threshold_buff = ((r > 0.7) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -0.7) & (self.curr_ee_goal[:, 2] <= 0))
+        p_threshold_buff = ((p > 1) & (self.curr_ee_goal[:, 1] >= 0)) | ((p < -1) & (self.curr_ee_goal[:, 1] <= 0))
         z_threshold_buff = z < self.cfg.termination.z_threshold
         
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
@@ -1095,7 +1100,8 @@ class WidowGo1(LeggedRobot):
                 f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
                 f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
-        self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
+        # self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
+        self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
         
     def compute_observations(self):
         """ Computes observations
@@ -1310,6 +1316,8 @@ class WidowGo1(LeggedRobot):
             for j in range(10):
                 pose = gymapi.Transform(gymapi.Vec3(ee_target_all_cart_world[i, 0, j], ee_target_all_cart_world[i, 1, j], ee_target_all_cart_world[i, 2, j]), r=None)
                 gymutil.draw_lines(sphere_geom, self.gym, self.viewer, self.envs[i], pose)
+            
+            
             # pose_curr = gymapi.Transform(gymapi.Vec3(curr_ee_goal_cart_world[i, 0], curr_ee_goal_cart_world[i, 1], curr_ee_goal_cart_world[i, 2]), r=None)
             # gymutil.draw_lines(sphere_geom_yellow, self.gym, self.viewer, self.envs[i], pose_curr)
 
@@ -1520,13 +1528,49 @@ class WidowGo1(LeggedRobot):
         underground_mask = torch.any(ee_target_cart[..., 2] < self.underground_limit, dim=0)
         return collision_mask | underground_mask
 
+    # def update_curr_ee_goal(self):
+    #     t = torch.clip(self.goal_timer / self.traj_timesteps, 0, 1)
+    #     self.curr_ee_goal_sphere[:] = torch.lerp(self.ee_start_sphere, self.ee_goal_sphere, t[:, None])
+    #     self.curr_ee_goal_cart[:] = sphere2cart(self.curr_ee_goal_sphere)
+    #     self.goal_timer += 1
+    #     resample_id = (self.goal_timer > self.traj_total_timesteps).nonzero(as_tuple=False).flatten()
+    #     self._resample_ee_goal(resample_id)
+
     def update_curr_ee_goal(self):
-        t = torch.clip(self.goal_timer / self.traj_timesteps, 0, 1)
-        self.curr_ee_goal_sphere[:] = torch.lerp(self.ee_start_sphere, self.ee_goal_sphere, t[:, None])
-        self.curr_ee_goal_cart[:] = sphere2cart(self.curr_ee_goal_sphere)
-        self.goal_timer += 1
-        resample_id = (self.goal_timer > self.traj_total_timesteps).nonzero(as_tuple=False).flatten()
-        self._resample_ee_goal(resample_id)
+        if not self.cfg.goal_ee.fixed_point_mode:
+            t = torch.clip(self.goal_timer / self.traj_timesteps, 0, 1)
+            self.curr_ee_goal_sphere[:] = torch.lerp(self.ee_start_sphere, self.ee_goal_sphere, t[:, None])
+            self.curr_ee_goal_cart[:]   = sphere2cart(self.curr_ee_goal_sphere)
+            self.goal_timer += 1
+            resample_id = (self.goal_timer > self.traj_total_timesteps).nonzero(as_tuple=False).flatten()
+            self._resample_ee_goal(resample_id)
+            return
+
+        # --- fixed point mode ---
+        if self.cfg.goal_ee.refresh_mode == "episode":
+            pass
+        elif self.cfg.goal_ee.refresh_mode == "half":
+            half_len = self.max_episode_length // 2
+            env_ids = torch.nonzero((self.episode_length_buf % half_len) == 0, as_tuple=False).flatten()
+            if len(env_ids) > 0:
+                self._sample_single_ee_goal(env_ids)
+
+
+    def _sample_single_ee_goal(self, env_ids):
+        self._resample_ee_goal_sphere_once(env_ids) 
+        self.ee_goal_cart[env_ids, :] = sphere2cart(self.ee_goal_sphere[env_ids, :])
+        tries = 0
+        remain = env_ids
+        while len(remain) > 0 and tries < 5:
+            ok_mask = self.collision_check(remain)   
+            remain   = remain[~ok_mask]
+            if len(remain) > 0:
+                self._resample_ee_goal_sphere_once(remain)
+                self.ee_goal_cart[remain, :] = sphere2cart(self.ee_goal_sphere[remain, :])
+                tries += 1
+        self.curr_ee_goal_cart[env_ids, :] = self.ee_goal_cart[env_ids, :]
+        self.curr_ee_goal_sphere[env_ids, :] = self.ee_goal_sphere[env_ids, :]
+
 
     def _reward_tracking_ee_sphere(self):
         ee_pos_local = quat_rotate_inverse(self.base_yaw_quat, self.ee_pos - torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1))
