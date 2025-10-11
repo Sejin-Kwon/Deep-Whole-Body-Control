@@ -689,7 +689,7 @@ class WidowGo1(LeggedRobot):
         self.orn_error_scale = torch.tensor(self.cfg.goal_ee.orn_error_scale, device=self.device)
         self.arm_base_overhead = torch.tensor([0., 0., 0.165], device=self.device)
         # self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
-        self.z_invariant_offset = torch.tensor([0], device=self.device).repeat(self.num_envs, 1)
+        self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
 
         print('------------------------------------------------------')
         print(f'root_states shape: {self.root_states.shape}')
@@ -802,7 +802,7 @@ class WidowGo1(LeggedRobot):
         if len(env_ids) == 0:
             return
 
-        # print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
+        print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
         # update curriculum
         if self.cfg.terrain.curriculum:
             self._update_terrain_curriculum(env_ids)
@@ -985,10 +985,10 @@ class WidowGo1(LeggedRobot):
         v = self.root_states[0, 7:10].detach().cpu().numpy()
         w = self.root_states[0,10:13].detach().cpu().numpy()
 
-        # print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
-        #         f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
-        #         f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
-        #         f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
+        print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
+                f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
+                f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
+                f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
         # prepare quantities
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
@@ -1082,23 +1082,23 @@ class WidowGo1(LeggedRobot):
         
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
 
-        # print(self.base_quat)
-        # print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        # print('r: ', r[0].item())
-        # print('p: ', p[0].item())
-        # print('z: ', z[0].item())
-        # print('-----------------------------------------------------')
+        print(self.base_quat)
+        print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        print('r: ', r[0].item())
+        print('p: ', p[0].item())
+        print('z: ', z[0].item())
+        print('-----------------------------------------------------')
         # time.sleep(0.5)
 
         # self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
         # if len(self.reset_triggers) > 0:
         #     print('reset_triggers: ', self.reset_triggers)
 
-        # print(f"[dbg] step={self.common_step_counter} env0: "
-        #         f"z={self.root_states[0,2].item():.3f} "
-        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        print(f"[dbg] step={self.common_step_counter} env0: "
+                f"z={self.root_states[0,2].item():.3f} "
+                f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
+                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         # self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
@@ -1300,6 +1300,7 @@ class WidowGo1(LeggedRobot):
         for k in range(N):
             pose = gymapi.Transform(gymapi.Vec3(pts_world[k,0].item(), pts_world[k,1].item(), pts_world[k,2].item()))
             gymutil.draw_lines(cloud_geom, self.gym, self.viewer, self.envs[0], pose)
+
 
     def _draw_ee_goal(self):
         sphere_geom = gymutil.WireframeSphereGeometry(0.005, 8, 8, None, color=(1, 0, 0))  # Red
@@ -1508,10 +1509,10 @@ class WidowGo1(LeggedRobot):
         self.ee_goal_sphere[env_ids, 0] = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 1] = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 2] = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
-        print("self.goal_ee_l_ranges", self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1])
-        print("self.goal_ee_p_ranges", self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1])
-        print("self.goal_ee_y_ranges", self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1])
-        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        # print("self.goal_ee_l_ranges", self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1])
+        # print("self.goal_ee_p_ranges", self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1])
+        # print("self.goal_ee_y_ranges", self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1])
+        # print("!!!!!!!!!!!!!!!!!!!!!!!!")
 
     def _resample_ee_goal_orn_once(self, env_ids):
         ee_goal_delta_orn_r = torch_rand_float(self.goal_ee_delta_orn_ranges[0, 0], self.goal_ee_delta_orn_ranges[0, 1], (len(env_ids), 1), device=self.device)
@@ -1748,7 +1749,7 @@ class WidowGo1(LeggedRobot):
     
     def _reward_collision(self):
         # Penalize collisions on selected bodies
-        return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1), dim=1)
+        return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalized_contact_indices, :], dim=-1) > 0.1), dim=1)
     
     def _reward_stumble(self):
         # Penalize feet hitting vertical surfaces
@@ -1759,10 +1760,6 @@ class WidowGo1(LeggedRobot):
         # Penalize changes in actions
         return torch.sum(torch.square(self.last_actions - self.actions), dim=1)
     
-    def _reward_smoothness(self):
-        jerk_like = self.actions - 2.0*self.last_actions + self.last_last_actions
-        return torch.sum(torch.square(jerk_like), dim=1)
-
     def _reward_orientation(self):
         # Penalize non flat base orientation
         return torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)

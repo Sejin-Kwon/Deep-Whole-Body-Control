@@ -356,7 +356,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # r_threshold = 0.78
         # p_threshold = 0.60
         # z_threshold = 0.325
-        z_threshold = -0.20
+        z_threshold = 0.38 #-0.21
 
     class terrain:
         
@@ -392,7 +392,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             horizontal_scale = 0.1 # [m]
             vertical_scale = 0.005 # [m]
             border_size = 25 # [m]
-            curriculum = True
+            curriculum = False
             static_friction = 1.0
             dynamic_friction = 1.0
             restitution = 0.
@@ -400,8 +400,13 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             measure_heights = True
             measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
             measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-            selected = False # select a unique terrain type and pass all arguments
-            terrain_kwargs = None #"smooth slope" # Dict of arguments for selected terrain
+            selected = True # select a unique terrain type and pass all arguments
+            terrain_kwargs = {
+                "type": "terrain_utils.pyramid_sloped_terrain",
+                "slope": 0.12,          # 경사 강도 (양수=오르막, 음수=내리막)
+                "platform_size": 3.0    # 중앙 평탄 구역(m)
+            }
+            #"smooth slope" # Dict of arguments for selected terrain
             max_init_terrain_level = 5 # starting curriculum state
             terrain_length = 8.
             terrain_width = 8.
