@@ -65,9 +65,12 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         tracking_ee_reward_schedule = [0, 1]
         
         class ranges:
-            final_pos_l = [0.2, 0.7] # min max [m/s]
-            final_pos_p = [- 2 * np.pi / 5, 1 * np.pi / 5]   # min max [m/s]
-            final_pos_y = [- 3 * np.pi / 5, 3 * np.pi / 5]    # min max [rad/s]
+            # final_pos_l = [0.2, 0.7] # min max [m/s]
+            # final_pos_p = [- 2 * np.pi / 5, 1 * np.pi / 5]   # min max [m/s]
+            # final_pos_y = [- 3 * np.pi / 5, 3 * np.pi / 5]    # min max [rad/s]
+            final_pos_l = [0.4, 0.6] # min max [m/s]
+            final_pos_p = [- 1 * np.pi / 6, 1 * np.pi / 6]   # min max [m/s]
+            final_pos_y = [0, 3 * np.pi / 5]    # min max [rad/s]
             init_pos_l = [0.6, 0.6]
             init_pos_p = [1 * np.pi / 4, 1 * np.pi / 4]
             init_pos_y = [-1 * np.pi / 6, 1 * np.pi / 6]
@@ -303,7 +306,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         # r_threshold = 0.78
         # p_threshold = 0.60
         # z_threshold = 0.325
-        z_threshold = -0.21
+        z_threshold = -0.20
 
     class terrain:
         

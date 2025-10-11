@@ -689,7 +689,7 @@ class WidowGo1(LeggedRobot):
         self.orn_error_scale = torch.tensor(self.cfg.goal_ee.orn_error_scale, device=self.device)
         self.arm_base_overhead = torch.tensor([0., 0., 0.165], device=self.device)
         # self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
-        self.z_invariant_offset = torch.tensor([0.23], device=self.device).repeat(self.num_envs, 1)
+        self.z_invariant_offset = torch.tensor([0], device=self.device).repeat(self.num_envs, 1)
 
         print('------------------------------------------------------')
         print(f'root_states shape: {self.root_states.shape}')
@@ -1271,6 +1271,19 @@ class WidowGo1(LeggedRobot):
         sphere_pose = gymapi.Transform(gymapi.Vec3(0, 0, 0), r=None)
         gymutil.draw_lines(sphere_geom_origin, self.gym, self.viewer, self.envs[0], sphere_pose)
 
+        N = 300
+        l = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (N,1), device=self.device).squeeze(1)
+        p = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (N,1), device=self.device).squeeze(1)
+        y = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (N,1), device=self.device).squeeze(1)
+        sph = torch.stack([l,p,y], dim=-1)
+        cart_local = sphere2cart(sph)
+
+        anchor = torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)  # (num_envs,3)
+        R_cart = quat_apply(self.base_yaw_quat, cart_local)  # base-yaw 따라가게
+        # R_cart = cart_local  # world 고정으로 보고 싶으면 이 줄로
+        pts_world = anchor[0] + R_cart  # env 0에 대해 시각화 (원하면 각 env마다)
+        cloud_geom = gymutil.WireframeSphereGeometry(0.005, 8, 8, None, color=(0, 1, 0)) # Green
+
         for i in range(self.num_envs):
             sphere_pose = gymapi.Transform(gymapi.Vec3(transformed_target_ee[i, 0], transformed_target_ee[i, 1], transformed_target_ee[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom, self.gym, self.viewer, self.envs[i], sphere_pose) 
@@ -1283,6 +1296,10 @@ class WidowGo1(LeggedRobot):
 
             sphere_pose_4 = gymapi.Transform(gymapi.Vec3(upper_arm_pose_no_z_offset[i, 0], upper_arm_pose_no_z_offset[i, 1], upper_arm_pose_no_z_offset[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom_4, self.gym, self.viewer, self.envs[i], sphere_pose_4) 
+
+        for k in range(N):
+            pose = gymapi.Transform(gymapi.Vec3(pts_world[k,0].item(), pts_world[k,1].item(), pts_world[k,2].item()))
+            gymutil.draw_lines(cloud_geom, self.gym, self.viewer, self.envs[0], pose)
 
     def _draw_ee_goal(self):
         sphere_geom = gymutil.WireframeSphereGeometry(0.005, 8, 8, None, color=(1, 0, 0))  # Red
@@ -1491,7 +1508,11 @@ class WidowGo1(LeggedRobot):
         self.ee_goal_sphere[env_ids, 0] = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 1] = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 2] = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
-    
+        print("self.goal_ee_l_ranges", self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1])
+        print("self.goal_ee_p_ranges", self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1])
+        print("self.goal_ee_y_ranges", self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1])
+        print("!!!!!!!!!!!!!!!!!!!!!!!!")
+
     def _resample_ee_goal_orn_once(self, env_ids):
         ee_goal_delta_orn_r = torch_rand_float(self.goal_ee_delta_orn_ranges[0, 0], self.goal_ee_delta_orn_ranges[0, 1], (len(env_ids), 1), device=self.device)
         ee_goal_delta_orn_p = torch_rand_float(self.goal_ee_delta_orn_ranges[1, 0], self.goal_ee_delta_orn_ranges[1, 1], (len(env_ids), 1), device=self.device)
