@@ -985,10 +985,10 @@ class WidowGo1(LeggedRobot):
         v = self.root_states[0, 7:10].detach().cpu().numpy()
         w = self.root_states[0,10:13].detach().cpu().numpy()
 
-        print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
-                f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
-                f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
-                f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
+        # print(f"env 0: pos=({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) "
+        #         f"quat=({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}) "
+        #         f"lin=({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) "
+        #         f"ang=({w[0]:.3f}, {w[1]:.3f}, {w[2]:.3f})")
         # prepare quantities
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
@@ -1076,7 +1076,7 @@ class WidowGo1(LeggedRobot):
         y = euler[:, 2]
         z = self.root_states[:, 2]
 
-        r_threshold_buff = ((r > 0.7) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -0.7) & (self.curr_ee_goal[:, 2] <= 0))
+        r_threshold_buff = ((r > 1.9) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -1.9) & (self.curr_ee_goal[:, 2] <= 0))
         p_threshold_buff = ((p > 1) & (self.curr_ee_goal[:, 1] >= 0)) | ((p < -1) & (self.curr_ee_goal[:, 1] <= 0))
         z_threshold_buff = z < self.cfg.termination.z_threshold
         
@@ -1100,8 +1100,8 @@ class WidowGo1(LeggedRobot):
                 f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
                 f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
-        # self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
-        self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
+        self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
+        # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
         
     def compute_observations(self):
         """ Computes observations
@@ -1120,6 +1120,8 @@ class WidowGo1(LeggedRobot):
                                     self.curr_ee_goal,  # dim 3
                                     self.ee_goal_delta_orn_euler  # dim 3
                                     ),dim=-1)
+        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        # print("!!!!!!!!!! ",base_height)
         # g_torques = self.get_g_torques()
         # arm_mm = self.get_arm_mm().reshape(self.num_envs, -1)
         # ee_jac = self.get_ee_jac().reshape(self.num_envs, -1)
@@ -1509,6 +1511,10 @@ class WidowGo1(LeggedRobot):
         self.ee_goal_sphere[env_ids, 0] = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 1] = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 2] = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
+        # self.ee_goal_sphere[env_ids, 0] = 0.6
+        # self.ee_goal_sphere[env_ids, 1] = 0
+        # self.ee_goal_sphere[env_ids, 2] = 0.2
+    
         # print("self.goal_ee_l_ranges", self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1])
         # print("self.goal_ee_p_ranges", self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1])
         # print("self.goal_ee_y_ranges", self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1])

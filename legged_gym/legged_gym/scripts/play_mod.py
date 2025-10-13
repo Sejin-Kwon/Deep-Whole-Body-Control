@@ -162,12 +162,15 @@ def play(args):
 
         obs, _, rews, arm_rews, dones, infos = env.step(actions.detach())
         # input()
-        env.commands[:, 0] = 0.3
+        env.commands[:, 0] = 0.2
         env.commands[:, 1] = 0.0
-        env.commands[:, 2] = 0.3
-        env.curr_ee_goal_sphere[:, 0] = 0.4
-        env.curr_ee_goal_sphere[:, 1] = 0.5
-        env.curr_ee_goal_sphere[:, 2] = 0.0
+        env.commands[:, 2] = 0
+        # env.curr_ee_goal_sphere[:, 0] = 0.4
+        # env.curr_ee_goal_sphere[:, 1] = 0.5
+        # env.curr_ee_goal_sphere[:, 2] = 0.0
+        env.ee_goal_sphere[:, 0] = 0.6
+        env.ee_goal_sphere[:, 1] = 0
+        env.ee_goal_sphere[:, 2] = 0.2
         # env.commands[:, 0] = 0.9   # x 전진 m/s
         # env.commands[:, 2] = 0.3   # yaw rad/s
         if i % 50 == 0:

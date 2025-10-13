@@ -124,7 +124,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         clip_actions = 100.
 
     class env:
-        num_envs = 1000
+        num_envs = 3000
         num_actions = 12 + 6 #CAUTION
         num_torques = 12 + 6
         action_delay = 2  # -1 for no delay
@@ -255,7 +255,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             torques = -0.00002
             energy_square = -6e-5
             dof_vel = 0
-            dof_acc = -2.5e-7
+            dof_acc = -2.5e-7/2
             base_height =  -0.05
             feet_air_time = 1.0
             collision = -1.
@@ -263,7 +263,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             action_rate = -0.01
             smoothness = -0. # -0.0001
             stand_still = -0.
-            survive = 0.2
+            survive = 0.1
             leg_energy = -0
             leg_energy_abs_sum = -0
             tracking_lin_vel_x_l1 = 0
@@ -277,8 +277,8 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             foot_contacts_z = -1e-4
         class arm_scales:
             termination = -1.0
-            tracking_ee_sphere = 0.55
-            tracking_ee_cart = 0.0
+            tracking_ee_sphere = 0.30
+            tracking_ee_cart = 0.55
             arm_orientation = -0.
             arm_energy_abs_sum = -0.0040
             tracking_ee_orn = 0.
@@ -290,7 +290,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         soft_dof_pos_limit = 0.9 # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.
-        base_height_target = 0.25
+        base_height_target = 0.35
         max_contact_force = 100. # forces above this value are penalized
 
     ''' dwc original version reward 
