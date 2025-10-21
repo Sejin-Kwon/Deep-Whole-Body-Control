@@ -1017,7 +1017,7 @@ class WidowGo1(LeggedRobot):
         self.extras["episode"]['coeff_lin_vel_x_lower_bound'] = self.lin_vel_x_ranges[0]
         self.extras["episode"]['coeff_ang_vel_yaw_upper_bound'] = self.ang_vel_yaw_ranges[1]
         self.extras["episode"]['coeff_ang_vel_yaw_lower_bound'] = self.ang_vel_yaw_ranges[0] 
-        self.extras["episode"]['coeff_tracking_ang_vel_yaw_exp'] = self.reward_scales['tracking_ang_vel_yaw_exp']
+        # self.extras["episode"]['coeff_tracking_ang_vel_yaw_exp'] = self.reward_scales['tracking_ang_vel_yaw_exp']
 
         self.last_actions[:] = self.actions[:]
         self.last_dof_vel[:] = self.dof_vel[:]
@@ -1688,6 +1688,11 @@ class WidowGo1(LeggedRobot):
         lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
         return torch.exp(-lin_vel_error/self.cfg.rewards.tracking_sigma)
     
+    def _reward_tracking_ang_vel(self):
+        # Tracking of angular velocity commands (yaw) 
+        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)
+
     def _reward_tracking_lin_vel_x_l1(self):
         error = torch.abs(self.commands[:, 0] - self.base_lin_vel[:, 0])
         # self.episode_metric_sums['tracking_lin_vel_x_l1'] += error
@@ -1782,6 +1787,12 @@ class WidowGo1(LeggedRobot):
     def _reward_orientation(self):
         # Penalize non flat base orientation
         return torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
+    
+    def _reward_dof_pos_limits(self):
+        # Penalize dof positions too close to the limit
+        out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(max=0.) # lower limit
+        out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
+        return torch.sum(out_of_limits, dim=1)
     
     def _reward_power_distribution(self):
         pow = self.torques * self.dof_vel  
