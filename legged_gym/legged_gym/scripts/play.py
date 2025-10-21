@@ -131,12 +131,15 @@ def play(args):
             actions = policy(obs.detach(), hist_encoding=True)
         obs, _, rews, arm_rews, dones, infos = env.step(actions.detach())
         # input()
-        env.commands[:,0]= 0.2
+        env.commands[:,0]= 1.0
         env.commands[:,1] = 0
         env.commands[:,2] = 0
-        env.curr_ee_goal_sphere[:, 0] = 0.6
-        env.curr_ee_goal_sphere[:, 1] = 0
-        env.curr_ee_goal_sphere[:, 2] = 0.2
+        # env.ee_goal_sphere[:, 0] = 0.4
+        # env.ee_goal_sphere[:, 1] = -0.2
+        # env.ee_goal_sphere[:, 2] = -0.2
+        env.ee_goal_sphere[:, 0] = 0.6
+        env.ee_goal_sphere[:, 1] = 0.2
+        env.ee_goal_sphere[:, 2] = 1.8
         if i % 50 == 0:
             command_detached = env.commands[0].detach().cpu().numpy()
             print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')

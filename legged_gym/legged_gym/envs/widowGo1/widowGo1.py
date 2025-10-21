@@ -1082,23 +1082,23 @@ class WidowGo1(LeggedRobot):
         
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
 
-        print(self.base_quat)
-        print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        print('r: ', r[0].item())
-        print('p: ', p[0].item())
-        print('z: ', z[0].item())
-        print('-----------------------------------------------------')
+        # print(self.base_quat)
+        # print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        # print('r: ', r[0].item())
+        # print('p: ', p[0].item())
+        # print('z: ', z[0].item())
+        # print('-----------------------------------------------------')
         # time.sleep(0.5)
 
         # self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
         # if len(self.reset_triggers) > 0:
         #     print('reset_triggers: ', self.reset_triggers)
 
-        print(f"[dbg] step={self.common_step_counter} env0: "
-                f"z={self.root_states[0,2].item():.3f} "
-                f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        # print(f"[dbg] step={self.common_step_counter} env0: "
+        #         f"z={self.root_states[0,2].item():.3f} "
+        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
+        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
@@ -1273,7 +1273,7 @@ class WidowGo1(LeggedRobot):
         sphere_pose = gymapi.Transform(gymapi.Vec3(0, 0, 0), r=None)
         gymutil.draw_lines(sphere_geom_origin, self.gym, self.viewer, self.envs[0], sphere_pose)
 
-        N = 300
+        N = 400
         l = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (N,1), device=self.device).squeeze(1)
         p = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (N,1), device=self.device).squeeze(1)
         y = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (N,1), device=self.device).squeeze(1)
@@ -1511,14 +1511,27 @@ class WidowGo1(LeggedRobot):
         self.ee_goal_sphere[env_ids, 0] = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 1] = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.ee_goal_sphere[env_ids, 2] = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
+        
+        ## down pos ##
+        # self.ee_goal_sphere[env_ids, 0] = 0.4
+        # self.ee_goal_sphere[env_ids, 1] = -0.2
+        # self.ee_goal_sphere[env_ids, 2] = -0.2
+
+        ## up pos ##
         # self.ee_goal_sphere[env_ids, 0] = 0.6
-        # self.ee_goal_sphere[env_ids, 1] = 0
-        # self.ee_goal_sphere[env_ids, 2] = 0.2
+        # self.ee_goal_sphere[env_ids, 1] = 0.2
+        # self.ee_goal_sphere[env_ids, 2] = 1.8
     
         # print("self.goal_ee_l_ranges", self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1])
         # print("self.goal_ee_p_ranges", self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1])
         # print("self.goal_ee_y_ranges", self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1])
         # print("!!!!!!!!!!!!!!!!!!!!!!!!")
+        '''
+        self.goal_ee_l_ranges 0.4 0.6
+        self.goal_ee_p_ranges -0.5235987755982987 0.5235987755982988
+        self.goal_ee_y_ranges 0.0 1.8849555921538759
+        !!!!!!!!!!!!!!!!!!!!!!!!
+        '''
 
     def _resample_ee_goal_orn_once(self, env_ids):
         ee_goal_delta_orn_r = torch_rand_float(self.goal_ee_delta_orn_ranges[0, 0], self.goal_ee_delta_orn_ranges[0, 1], (len(env_ids), 1), device=self.device)
@@ -1769,3 +1782,8 @@ class WidowGo1(LeggedRobot):
     def _reward_orientation(self):
         # Penalize non flat base orientation
         return torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
+    
+    def _reward_power_distribution(self):
+        pow = self.torques * self.dof_vel  
+        var_pow = torch.var(pow, dim=1, unbiased=False)    
+        return torch.square(var_pow)        # var(τ·θ̇)^2

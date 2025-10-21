@@ -65,12 +65,15 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         tracking_ee_reward_schedule = [0, 1]
         
         class ranges:
-            # final_pos_l = [0.2, 0.7] # min max [m/s]
-            # final_pos_p = [- 2 * np.pi / 5, 1 * np.pi / 5]   # min max [m/s]
-            # final_pos_y = [- 3 * np.pi / 5, 3 * np.pi / 5]    # min max [rad/s]
-            final_pos_l = [0.4, 0.6] # min max [m/s]
-            final_pos_p = [- 1 * np.pi / 6, 1 * np.pi / 6]   # min max [m/s]
-            final_pos_y = [0, 3 * np.pi / 5]    # min max [rad/s]
+            # original range => yaw and pitch are reversed 
+            final_pos_l = [0.2, 0.7] # min max [m/s]
+            final_pos_p = [- 2 * np.pi / 5, 1 * np.pi / 5]   # min max [m/s]  ## yaw !!!!!! 
+            final_pos_y = [- 1 * np.pi / 5, 3 * np.pi / 5]    # min max [rad/s]  ## pitch!!!!
+
+            #   alleviated range 
+            # final_pos_l = [0.4, 0.6] # min max [m/s]
+            # final_pos_p = [- 1 * np.pi / 6, 1 * np.pi / 6]   # min max [m/s]
+            # final_pos_y = [0, 3 * np.pi / 5]    # min max [rad/s]
             init_pos_l = [0.6, 0.6]
             init_pos_p = [1 * np.pi / 4, 1 * np.pi / 4]
             init_pos_y = [-1 * np.pi / 6, 1 * np.pi / 6]
@@ -186,7 +189,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/widowGo1/urdf/widowGo1.urdf'
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "trunk"]
-        terminate_after_contacts_on = [] # ["wx250", "base"]
+        terminate_after_contacts_on = ["base", "trunk"] # ["wx250", "base"]
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
         collapse_fixed_joints = True # Specific fixed joints can be kept by adding " <... dont_collapse="true">
@@ -274,7 +277,9 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
             tracking_lin_vel_z_l2 = -0.0
             leg_action_l2 = -0.0
             hip_action_l2 = -0.01
-            foot_contacts_z = -1e-4
+            foot_contacts_z = -0.
+            power_distribution = -0.0000001
+
         class arm_scales:
             termination = -1.0
             tracking_ee_sphere = 0.30
@@ -355,8 +360,8 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
     class termination:
         # r_threshold = 0.78
         # p_threshold = 0.60
-        # z_threshold = 0.325
-        z_threshold = 0.38 #-0.21
+        # z_threshold = 0.325 
+        z_threshold = 0.38 
 
     class terrain:
         
