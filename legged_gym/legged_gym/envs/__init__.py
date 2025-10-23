@@ -41,7 +41,8 @@ from .a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 from .go1.go1_config import Go1RoughCfg, Go1RoughCfgPPO
 from .widowGo1.widowGo1 import WidowGo1
 from .widowGo1.widowGo1_config import WidowGo1RoughCfg, WidowGo1RoughCfgPPO
-
+from .go2viper.go2viper import go2viper
+from .go2viper.go2viper_config import go2viperRoughCfg, go2viperRoughCfgPPO
 
 import os
 
@@ -54,3 +55,5 @@ task_registry.register( "a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO(), 'a1')
 task_registry.register( "go1", LeggedRobot, Go1RoughCfg(), Go1RoughCfgPPO(), 'go1')
 task_registry.register( "widowGo1", WidowGo1, WidowGo1RoughCfg(), WidowGo1RoughCfgPPO(), 'widowGo1')
 task_registry.register( "cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO(), 'cassie')
+task_registry.register( "go2viper", go2viper, go2viperRoughCfg(), go2viperRoughCfgPPO(), 'go2viper')
+
