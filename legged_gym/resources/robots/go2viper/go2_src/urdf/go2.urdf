@@ -394,9 +394,10 @@ Stephen Brawner (brawner@gmail.com)
         izz="0.000596" />
     </inertial>
     <visual>
-      <origin
+      <origin rpy="1.5707963267948966 0 0" xyz="0 -0.08 0" />
+      <!-- <origin
         xyz="0 0 0"
-        rpy="3.1415 0 0" />
+        rpy="3.1415 0 0" /> -->
       <geometry>
         <mesh
           filename="../dae/hip.dae" />

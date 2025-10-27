@@ -141,7 +141,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         send_timeouts = True # send time out information to the algorithm
         episode_length_s = 20 # episode length in seconds
 
-        reorder_dofs = False # TODO: have to check!!!! 
+        reorder_dofs = True # TODO: have to check!!!! 
 
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
@@ -176,7 +176,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # PD Drive parameters:
         # Kp = [ 5.1876, 5.1876, 3.4584, 0.1729, 1.7292, 0.1729]
         # Kd = [ 0.4323, 0.4323, 0.0865, 0,      0.0864, 0]
-        stiffness = {'joint': 50, 'vx': 30}  # [N*m/rad]
+        stiffness = {'joint': 50, 'vx': 25}  # [N*m/rad]
         damping = {'joint': 1, 'vx': 0.6}     # [N*m*s/rad]
         adaptive_arm_gains = False
         # action scale: target angle = actionScale * action + defaultAngle
@@ -186,12 +186,12 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         torque_supervision = False
 
     class asset( LeggedRobotCfg.asset ):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/go2viper/go2viper/go2_viperx_patched2.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/go2viper/go2viper/go2_viperx.urdf'
         foot_name = "foot"
-        penalize_contacts_on = ["thigh", "calf"]
-        terminate_after_contacts_on = ["base"] # ["wx250", "base"]
+        penalize_contacts_on = ["thigh", "trunk"]
+        terminate_after_contacts_on = [] # ["wx250", "base"]
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
-        flip_visual_attachments = False
+        flip_visual_attachments = False # True: go2 ok / viper not ok,   False: go2 not ok / viper ok
         collapse_fixed_joints = True # Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False
     
@@ -218,11 +218,11 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         friction_range = [0.5, 1.25]
         # friction_range = [-0.5, 3.0]
         
-        randomize_base_mass = False
+        randomize_base_mass = True
         added_mass_range = [-1., 1.]
         # added_mass_range = [-0.5, 2.5]
         
-        randomize_base_com = False
+        randomize_base_com = True
         added_com_range_x = [-0.15, 0.15]
         added_com_range_y = [-0.15, 0.15]
         added_com_range_z = [-0.15, 0.15]
@@ -237,6 +237,11 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # arm_friction_range = [0.0, 0.2]
         # randomize_arm_ema = True
         # arm_ema_range = [0.05, 0.25]
+
+        # ---- PD gains DR (episode-wise) ----
+        pd_dr_enable = True  
+        kp_multiplier_range = [0.85, 1.15]
+        kd_multiplier_tie_gamma = 0.5 
 
         push_robots = True
         push_interval_s = 10
@@ -414,7 +419,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # r_threshold = 0.78
         # p_threshold = 0.60
         # z_threshold = 0.325 
-        z_threshold = 0.38 
+        z_threshold = 0.372
 
     class terrain:
         

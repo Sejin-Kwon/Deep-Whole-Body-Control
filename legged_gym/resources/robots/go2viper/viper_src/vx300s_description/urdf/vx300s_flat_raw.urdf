@@ -7,249 +7,23 @@
   <material name="interbotix_black">
     <texture filename="package://interbotix_xsarm_descriptions/meshes/interbotix_black.png"/>
   </material>
-  <transmission name="vx_waist_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_waist">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_waist_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_shoulder_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_shoulder">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_shoulder_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_elbow_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_elbow">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_elbow_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_forearm_roll_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_forearm_roll">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_forearm_roll_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_wrist_angle_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_wrist_angle">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_wrist_angle_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_wrist_rotate_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_wrist_rotate">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_wrist_rotate_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_left_finger_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_left_finger">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_left_finger_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="vx_right_finger_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="vx_right_finger">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="vx_right_finger_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <gazebo reference="vx_base_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_shoulder_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_upper_arm_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_upper_forearm_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_lower_forearm_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_wrist_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_gripper_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_gripper_prop_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_gripper_bar_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_left_finger_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_right_finger_link">
-    <kp>1000000.0</kp>
-    <kd>1.0</kd>
-    <mu1>0.8</mu1>
-    <mu2>0.8</mu2>
-    <maxVel>0.0</maxVel>
-    <minDepth>0.001</minDepth>
-    <selfCollide>true</selfCollide>
-  </gazebo>
-  <gazebo reference="vx_waist">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_shoulder">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_elbow">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_forearm_roll">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_wrist_angle">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_wrist_rotate">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_ee_arm">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_gripper">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_gripper_bar">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_ee_bar">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_left_finger">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_right_finger">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <gazebo reference="vx_ee_gripper">
-    <implicitSpringDamper>true</implicitSpringDamper>
-    <disableFixedJointLumping>true</disableFixedJointLumping>
-  </gazebo>
-  <link name="vx_base_link">
+  <joint name="viper_mount" type="fixed">
+    <origin rpy="0 0 0" xyz="0.03 0 0.057"/>
+    <parent link="base"/>
+    <child link="vx/base_link"/>
+  </joint>
+  <link name="vx/base_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -260,24 +34,25 @@
   </link>
   <joint name="vx_waist" type="revolute">
     <axis xyz="0 0 1"/>
-    <limit effort="10" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/>
+    <!-- <limit effort="10" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/> -->
+    <limit effort="10" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0 0 0.079"/>
-    <parent link="vx_base_link"/>
-    <child link="vx_shoulder_link"/>
+    <parent link="vx/base_link"/>
+    <child link="vx/shoulder_link"/>
     <dynamics friction="0.1"/>
   </joint>
-  <link name="vx_shoulder_link">
+  <link name="vx/shoulder_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.003"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.003"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -290,22 +65,22 @@
     <axis xyz="0 1 0"/>
     <limit effort="20" lower="-1.8500490071139892" upper="1.2566370614359172" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0 0 0.04805"/>
-    <parent link="vx_shoulder_link"/>
-    <child link="vx_upper_arm_link"/>
+    <parent link="vx/shoulder_link"/>
+    <child link="vx/upper_arm_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <link name="vx_upper_arm_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -326,14 +101,14 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -354,14 +129,14 @@
     <visual>
       <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -382,14 +157,14 @@
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -410,14 +185,14 @@
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.02 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.02 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -449,14 +224,14 @@
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.063 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.063 0 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -490,14 +265,14 @@
     <visual>
       <origin rpy="1.5707963267948966 -3.141592653589793 1.5707963267948966" xyz="-0.0404 -0.0575 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 -3.141592653589793 1.5707963267948966" xyz="-0.0404 -0.0575 0"/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -519,14 +294,14 @@
     <visual>
       <origin rpy="-1.5707963267948966 3.141592653589793 -1.5707963267948966" xyz="-0.0404 0.0575 0 "/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="-1.5707963267948966 3.141592653589793 -1.5707963267948966" xyz="-0.0404 0.0575 0 "/>
       <geometry>
-        <mesh filename="package://interbotix_xsarm_descriptions/meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="meshes/interbotix/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>

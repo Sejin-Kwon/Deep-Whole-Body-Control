@@ -717,6 +717,8 @@ class go2viper(LeggedRobot):
         self.torques = torch.zeros(self.num_envs, self.num_dofs, dtype=torch.float, device=self.device, requires_grad=False)
         self.p_gains = torch.zeros(self.num_torques, dtype=torch.float, device=self.device, requires_grad=False)
         self.d_gains = torch.zeros(self.num_torques, dtype=torch.float, device=self.device, requires_grad=False)
+        self.kp_scale_env = torch.ones(self.num_envs, 1, dtype=torch.float, device=self.device, requires_grad=False)
+        self.kd_scale_env = torch.ones(self.num_envs, 1, dtype=torch.float, device=self.device, requires_grad=False)
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         self.last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         self.last_dof_vel = torch.zeros_like(self.dof_vel)
@@ -757,6 +759,8 @@ class go2viper(LeggedRobot):
                 if self.cfg.control.control_type in ["P", "V"]:
                     raise Exception(f"PD gain of joint {name} were not defined, setting them to zero")
         # self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
+        self._init_pd_dr_scales_per_env()
+        
         self.default_dof_pos_wo_gripper = self.default_dof_pos[:-2]
 
         link_mass = torch.zeros(1, 9, dtype=torch.float, device=self.device)
@@ -768,6 +772,18 @@ class go2viper(LeggedRobot):
         self.g_force = self.link_mass.unsqueeze(-1).unsqueeze(-1) * g
 
         self._get_init_start_ee_sphere()
+
+    def _init_pd_dr_scales_per_env(self):
+        if not getattr(self.cfg.domain_rand, "pd_dr_enable", False):
+            self.kp_scale_env.fill_(1.0); self.kd_scale_env.fill_(1.0); return
+        lo, hi = self.cfg.domain_rand.kp_multiplier_range
+        gamma  = self.cfg.domain_rand.kd_multiplier_tie_gamma
+
+        alpha_p = torch.empty(self.num_envs, 1, device=self.device).uniform_(lo, hi)
+        alpha_d = torch.clamp(alpha_p.pow(gamma), min=0.35)  
+
+        self.kp_scale_env[:] = alpha_p
+        self.kd_scale_env[:] = alpha_d
     
     
     def _get_curriculum_value(self, schedule, init_range, final_range, counter):
@@ -1084,22 +1100,22 @@ class go2viper(LeggedRobot):
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
 
         # print(self.base_quat)
-        # print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        # print('r: ', r[0].item())
-        # print('p: ', p[0].item())
-        # print('z: ', z[0].item())
-        # print('-----------------------------------------------------')
+        print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        print('r: ', r[0].item())
+        print('p: ', p[0].item())
+        print('z: ', z[0].item())
+        print('-----------------------------------------------------')
         # time.sleep(0.5)
 
-        # self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
-        # if len(self.reset_triggers) > 0:
-        #     print('reset_triggers: ', self.reset_triggers)
+        self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
+        if len(self.reset_triggers) > 0:
+            print('reset_triggers: ', self.reset_triggers)
 
-        # print(f"[dbg] step={self.common_step_counter} env0: "
-        #         f"z={self.root_states[0,2].item():.3f} "
-        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        print(f"[dbg] step={self.common_step_counter} env0: "
+                f"z={self.root_states[0,2].item():.3f} "
+                f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
+                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
@@ -1159,9 +1175,9 @@ class go2viper(LeggedRobot):
                                     "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
                                     "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
                                     "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", 
-                                    'widow_waist', 'widow_shoulder', 'widow_elbow', 
-                                    'widow_forearm_roll', 'widow_wrist_angle', 'widow_wrist_rotate', 
-                                    'widow_left_finger', 'widow_right_finger']
+                                    'vx_waist', 'vx_shoulder', 'vx_elbow', 
+                                    'vx_forearm_roll', 'vx_wrist_angle', 'vx_wrist_rotate', 
+                                    'vx_left_finger', 'vx_right_finger']
 
                 for name in dof_order_a1_robot:
                     self.ig_2_raisim_reordering_idx.append(self.dof_names.index(name))
@@ -1180,9 +1196,9 @@ class go2viper(LeggedRobot):
                                     "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
                                     "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
                                     "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint",
-                                    'widow_waist', 'widow_shoulder', 'widow_elbow', 
-                                    'widow_forearm_roll', 'widow_wrist_angle', 'widow_wrist_rotate', 
-                                    'widow_left_finger', 'widow_right_finger']
+                                    'vx_waist', 'vx_shoulder', 'vx_elbow', 
+                                    'vx_forearm_roll', 'vx_wrist_angle', 'vx_wrist_rotate', 
+                                    'vx_left_finger', 'vx_right_finger']
 
                 for name in self.dof_names:
                     self.raisim2ig_reordering_idx.append(dof_order_a1_robot.index(name))
@@ -1200,8 +1216,8 @@ class go2viper(LeggedRobot):
                                     "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
                                     "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
                                     "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", 
-                                    'widow_waist', 'widow_shoulder', 'widow_elbow', 
-                                    'widow_forearm_roll', 'widow_wrist_angle', 'widow_wrist_rotate']
+                                    'vx_waist', 'vx_shoulder', 'vx_elbow', 
+                                    'vx_forearm_roll', 'vx_wrist_angle', 'vx_wrist_rotate']
 
                 for name in dof_order_a1_robot:
                     self.ig_2_raisim_wo_gripper_reordering_idx.append(self.dof_names.index(name))
@@ -1220,8 +1236,8 @@ class go2viper(LeggedRobot):
                                     "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
                                     "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
                                     "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint",
-                                    'widow_waist', 'widow_shoulder', 'widow_elbow', 
-                                    'widow_forearm_roll', 'widow_wrist_angle', 'widow_wrist_rotate']
+                                    'vx_waist', 'vx_shoulder', 'vx_elbow', 
+                                    'vx_forearm_roll', 'vx_wrist_angle', 'vx_wrist_rotate']
 
                 for name in self.dof_wo_gripper_names:
                     self.raisim2ig_wo_gripper_reordering_idx.append(dof_order_a1_robot.index(name))
@@ -1274,7 +1290,7 @@ class go2viper(LeggedRobot):
         sphere_pose = gymapi.Transform(gymapi.Vec3(0, 0, 0), r=None)
         gymutil.draw_lines(sphere_geom_origin, self.gym, self.viewer, self.envs[0], sphere_pose)
 
-        N = 400
+        N = 300
         l = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (N,1), device=self.device).squeeze(1)
         p = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (N,1), device=self.device).squeeze(1)
         y = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (N,1), device=self.device).squeeze(1)
@@ -1286,6 +1302,10 @@ class go2viper(LeggedRobot):
         # R_cart = cart_local  # world 고정으로 보고 싶으면 이 줄로
         pts_world = anchor[0] + R_cart  # env 0에 대해 시각화 (원하면 각 env마다)
         cloud_geom = gymutil.WireframeSphereGeometry(0.005, 8, 8, None, color=(0, 1, 0)) # Green
+
+        for k in range(N):
+            pose = gymapi.Transform(gymapi.Vec3(pts_world[k,0].item(), pts_world[k,1].item(), pts_world[k,2].item()))
+            gymutil.draw_lines(cloud_geom, self.gym, self.viewer, self.envs[0], pose)
 
         for i in range(self.num_envs):
             sphere_pose = gymapi.Transform(gymapi.Vec3(transformed_target_ee[i, 0], transformed_target_ee[i, 1], transformed_target_ee[i, 2]), r=None)
@@ -1300,9 +1320,7 @@ class go2viper(LeggedRobot):
             sphere_pose_4 = gymapi.Transform(gymapi.Vec3(upper_arm_pose_no_z_offset[i, 0], upper_arm_pose_no_z_offset[i, 1], upper_arm_pose_no_z_offset[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom_4, self.gym, self.viewer, self.envs[i], sphere_pose_4) 
 
-        for k in range(N):
-            pose = gymapi.Transform(gymapi.Vec3(pts_world[k,0].item(), pts_world[k,1].item(), pts_world[k,2].item()))
-            gymutil.draw_lines(cloud_geom, self.gym, self.viewer, self.envs[0], pose)
+        
 
 
     def _draw_ee_goal(self):
@@ -1485,8 +1503,17 @@ class go2viper(LeggedRobot):
 
         self.dof_pos_wo_gripper_wrapped[:] = self.dof_pos_wo_gripper
         self.dof_pos_wo_gripper_wrapped[:, -8] = torch_wrap_to_pi_minuspi(self.dof_pos_wo_gripper_wrapped[:, -8])
+        
+        # default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
 
-        default_torques = self.p_gains * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - self.d_gains * self.dof_vel_wo_gripper
+        ###### DR: PD gains
+        
+        kp = self.kp_scale_env * self.p_gains.unsqueeze(0)
+        kd = self.kd_scale_env * self.d_gains.unsqueeze(0)
+
+        default_torques = kp * (actions_scaled + self.default_dof_pos_wo_gripper - self.dof_pos_wo_gripper_wrapped) - kd * self.dof_vel_wo_gripper
+        
+        ######
 
         if self.cfg.control.adaptive_arm_gains:
             leg_torques = default_torques[:, :12]

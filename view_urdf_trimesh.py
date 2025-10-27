@@ -17,8 +17,10 @@
 import os, numpy as np, trimesh
 from urdfpy import URDF
 
-URDF_PATH = "/home/sejink//Deep-Whole-Body-Control/legged_gym/resources/robots/go2viper/go2viper/go2_viperx_patched2.urdf"
+URDF_PATH = "/home/sejink/Deep-Whole-Body-Control/legged_gym/resources/robots/go2viper/go2viper/go2_viperx.urdf"
 # URDF_PATH = "/home/sejink//Deep-Whole-Body-Control/go2.urdf"
+# URDF_PATH = "/home/sejink//Deep-Whole-Body-Control/legged_gym/resources/robots/go2viper/go2viper/go2_viperx_widowStyle.urdf"
+
 ROBOT_DIR = os.path.dirname(os.path.abspath(URDF_PATH))
 os.chdir(ROBOT_DIR)
 

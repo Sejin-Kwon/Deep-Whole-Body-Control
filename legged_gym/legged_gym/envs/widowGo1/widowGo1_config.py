@@ -173,6 +173,7 @@ class WidowGo1RoughCfg( LeggedRobotCfg ):
         }
 
     class control:
+        control_type = 'P'
         # PD Drive parameters:
         # Kp = [ 5.1876, 5.1876, 3.4584, 0.1729, 1.7292, 0.1729]
         # Kd = [ 0.4323, 0.4323, 0.0865, 0,      0.0864, 0]
