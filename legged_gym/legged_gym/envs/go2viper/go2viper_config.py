@@ -58,11 +58,12 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         num_collision_check_samples = 10
         command_mode = 'sphere'
 
-        l_schedule = [0, 1]
-        p_schedule = [0, 1]
-        y_schedule = [0, 1]
+        # A unit of each schedule is iteration! 
+        l_schedule = [0, 10000]
+        p_schedule = [0, 10000]
+        y_schedule = [0, 10000]
         # arm_action_scale_schedule = [0, 1]
-        tracking_ee_reward_schedule = [0, 1]
+        tracking_ee_reward_schedule = [10000, 20000]
         
         class ranges:
             # original range => yaw and pitch are reversed 
@@ -84,7 +85,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             final_delta_orn = [[-0, 0], [-0, 0], [-0, 0]]
 
             # final_arm_action_scale = 1.7
-            final_tracking_ee_reward = 0.55
+            final_tracking_ee_reward = 0.7
 
         sphere_error_scale = [1 / (ranges.final_pos_l[1] - ranges.final_pos_l[0]), 1 / (ranges.final_pos_p[1] - ranges.final_pos_p[0]), 1 / (ranges.final_pos_y[1] - ranges.final_pos_y[0])]
         orn_error_scale = [2 / np.pi, 2 / np.pi, 2 / np.pi]
@@ -239,7 +240,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # arm_ema_range = [0.05, 0.25]
 
         # ---- PD gains DR (episode-wise) ----
-        pd_dr_enable = True  
+        pd_dr_enable = False  # have to fix for Deep whole-body control version 
         kp_multiplier_range = [0.85, 1.15]
         kd_multiplier_tie_gamma = 0.5 
 
@@ -265,9 +266,9 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             torques = -0.0002
             energy_square = -0. # -6e-5
             dof_vel = -0.
-            dof_acc = -2.5e-7
-            base_height = -0.05
-            feet_air_time = 1.0
+            dof_acc = -2.5e-7 #last: -2.5e-7/2 
+            base_height = -0.05 #last: -0.
+            feet_air_time = 1.0   #last: 2.0
             collision = -1.
             stumble = -0. 
             action_rate = -0.01
@@ -286,11 +287,11 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             hip_action_l2 = -0. # -0.01
             foot_contacts_z = -0. # -1e-4
             dof_pos_limits = -10.0
-            power_distribution = -0.00000001 
+            power_distribution = -0.00000001  #last: -0.0000001 
 
         class arm_scales:
             termination = -1.0
-            tracking_ee_sphere = 0.30
+            tracking_ee_sphere = 0.55 #0.30
             tracking_ee_cart = 0.55
             arm_orientation = -0.
             arm_energy_abs_sum = -0.0040
@@ -437,7 +438,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             transform_y = - tot_rows * horizontal_scale / 2
             transform_z = 0.0
 
-            curriculum = True
+            curriculum = False
             static_friction = 1.0
             dynamic_friction = 1.0
             restitution = 0.0

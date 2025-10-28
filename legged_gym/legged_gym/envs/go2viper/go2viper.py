@@ -794,7 +794,9 @@ class go2viper(LeggedRobot):
 
         self.lin_vel_x_ranges = self._get_curriculum_value(self.lin_vel_x_schedule, self.init_lin_vel_x_ranges, self.final_lin_vel_x_ranges, self.update_counter)
         self.ang_vel_yaw_ranges = self._get_curriculum_value(self.ang_vel_yaw_schedule, self.init_ang_vel_yaw_ranges, self.final_ang_vel_yaw_ranges, self.update_counter)
-        self.reward_scales['tracking_ang_vel_yaw_exp'] = self._get_curriculum_value(self.tracking_ang_vel_yaw_schedule, 0, self.final_tracking_ang_vel_yaw_exp, self.update_counter)
+        
+        # tracking_ang_vel_yaw scale curriculum
+        # self.reward_scales['tracking_ang_vel_yaw_exp'] = self._get_curriculum_value(self.tracking_ang_vel_yaw_schedule, 0, self.final_tracking_ang_vel_yaw_exp, self.update_counter)
 
         self.goal_ee_l_ranges = self._get_curriculum_value(self.goal_ee_l_schedule, self.init_goal_ee_l_ranges, self.final_goal_ee_l_ranges, self.update_counter)
         self.goal_ee_p_ranges = self._get_curriculum_value(self.goal_ee_p_schedule, self.init_goal_ee_p_ranges, self.final_goal_ee_p_ranges, self.update_counter)
@@ -802,9 +804,14 @@ class go2viper(LeggedRobot):
         # self.action_scale[-6:] = self._get_curriculum_value(self.arm_action_scale_schedule, 0, self.final_arm_action_scale, self.update_counter)
         if 'tracking_ee_sphere' in self.arm_reward_scales:
             self.arm_reward_scales['tracking_ee_sphere'] = self._get_curriculum_value(self.tracking_ee_reward_schedule, 0, self.final_tracking_ee_reward, self.update_counter)
-        else:
+        if 'tracking_ee_cart' in self.arm_reward_scales:
             self.arm_reward_scales['tracking_ee_cart'] = self._get_curriculum_value(self.tracking_ee_reward_schedule, 0, self.final_tracking_ee_reward, self.update_counter)
 
+        # print("lin_vel_x_ranges: ", self.lin_vel_x_ranges)
+        # print("ang_vel_yaw_ranges: ", self.ang_vel_yaw_ranges)
+        # print("self.goal_ee_l_ranges: ", self.goal_ee_l_ranges)
+        # print("self.goal_ee_p_ranges: ", self.goal_ee_p_ranges)
+        # print("self.goal_ee_y_ranges: ", self.goal_ee_y_ranges)
 
     def reset_idx(self, env_ids, start=False):
         """ Reset some environments.
@@ -826,7 +833,7 @@ class go2viper(LeggedRobot):
         #TODO: have to check command_curriculum
         # avoid updating command curriculum at each step since the maximum command is common to all envs
         # if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
-        #     self.update_command_curriculum(env_ids)
+        #     self.update_command_curriculum()
         
         # reset robot states
         self._reset_dofs(env_ids)
@@ -935,6 +942,29 @@ class go2viper(LeggedRobot):
         )
         self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self._root_states))
 
+    def _update_terrain_curriculum(self, env_ids):
+        """ Implements the game-inspired curriculum.
+
+        Args:
+            env_ids (List[int]): ids of environments being reset
+        """
+        # Implement Terrain curriculum
+        if not self.init_done:
+            # don't change on initial reset
+            return
+        distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
+        # robots that walked far enough progress to harder terains
+        move_up = distance > self.terrain.env_length / 2
+        # robots that walked less than half of their required distance go to simpler terrains
+        move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
+        self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
+        # Robots that solve the last level are sent to a random one
+        self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids]>=self.max_terrain_level,
+                                                   torch.randint_like(self.terrain_levels[env_ids], self.max_terrain_level),
+                                                   torch.clip(self.terrain_levels[env_ids], 0)) # (the minumum level is zero)
+        self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
+    
+
     def _reset_dofs(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
         Positions are randomly selected within 0.5:1.5 x default positions.
@@ -957,6 +987,10 @@ class go2viper(LeggedRobot):
             env_ids (List[int]): Environments ids for which new commands are needed
         """
         self.commands[env_ids, 0] = torch_rand_float(self.lin_vel_x_ranges[0], self.lin_vel_x_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
+        # print("!!!!!!!!!!!")
+        # print(self.lin_vel_x_ranges[0])
+        # print(self.lin_vel_x_ranges[1])
+        # print("env0: commands[0]", self.commands[0,0])
         self.commands[env_ids, 1] = 0
         self.commands[env_ids, 2] = torch_rand_float(self.ang_vel_yaw_ranges[0], self.ang_vel_yaw_ranges[1], (len(env_ids), 1), device=self.device).squeeze(1)
 
@@ -1100,22 +1134,22 @@ class go2viper(LeggedRobot):
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
 
         # print(self.base_quat)
-        print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        print('r: ', r[0].item())
-        print('p: ', p[0].item())
-        print('z: ', z[0].item())
-        print('-----------------------------------------------------')
-        # time.sleep(0.5)
+        # print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        # print('r: ', r[0].item())
+        # print('p: ', p[0].item())
+        # print('z: ', z[0].item())
+        # print('-----------------------------------------------------')
+        # # time.sleep(0.5)
 
-        self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
-        if len(self.reset_triggers) > 0:
-            print('reset_triggers: ', self.reset_triggers)
+        # self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
+        # if len(self.reset_triggers) > 0:
+        #     print('reset_triggers: ', self.reset_triggers)
 
-        print(f"[dbg] step={self.common_step_counter} env0: "
-                f"z={self.root_states[0,2].item():.3f} "
-                f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        # print(f"[dbg] step={self.common_step_counter} env0: "
+        #         f"z={self.root_states[0,2].item():.3f} "
+        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
+        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
