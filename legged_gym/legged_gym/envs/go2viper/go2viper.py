@@ -591,7 +591,7 @@ class go2viper(LeggedRobot):
         rigid_body_state_tensor = self.gym.acquire_rigid_body_state_tensor(self.sim) # The buffer has shape (num_rigid_bodies, 13). State for each rigid body contains position([0:3]), rotation([3:7]), linear velocity([7:10]), and angular velocity([10:13])
         mass_matrix_tensor = self.gym.acquire_mass_matrix_tensor(self.sim, "robot_dog") # Retrieves buffer for Mass matrix
         jacobian_tensor = self.gym.acquire_jacobian_tensor(self.sim, "robot_dog") # Retrieves buffer information for Jacobian
-        force_sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim)
+        force_sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim) # Retrieves buffer for force sensors. The buffer has shape (num_force_sensors, 6). Each force sensor state has forces (3) and torques (3) data.
 
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
@@ -826,7 +826,7 @@ class go2viper(LeggedRobot):
         if len(env_ids) == 0:
             return
 
-        print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
+        # print("!!!!!!!!!! reset !!!!!!!!!!!1111 ")
         # update curriculum
         if self.cfg.terrain.curriculum:
             self._update_terrain_curriculum(env_ids)
@@ -1159,22 +1159,22 @@ class go2viper(LeggedRobot):
         # print(self.curr_ee_goal)
         # ee_target_cart = sphere2cart(self.ee_goal_sphere[0, :])
         # print(ee_target_cart)
-        print(torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        print('r: ', r[0].item())
-        print('p: ', p[0].item())
-        print('z: ', z[0].item())
-        print('-----------------------------------------------------')
+        # print(torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        # print('r: ', r[0].item())
+        # print('p: ', p[0].item())
+        # print('z: ', z[0].item())
+        # print('-----------------------------------------------------')
         # time.sleep(0.5)
 
         self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
-        if len(self.reset_triggers) > 0:
-            print('reset_triggers: ', self.reset_triggers)
+        # if len(self.reset_triggers) > 0:
+        #     print('reset_triggers: ', self.reset_triggers)
 
-        print(f"[dbg] step={self.common_step_counter} env0: "
-                f"z={self.base_height.item():.3f} "
-                f"z<thr?={(self.base_height < self.cfg.termination.z_threshold).item()} "
-                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        # print(f"[dbg] step={self.common_step_counter} env0: "
+        #         f"z={self.base_height.item():.3f} "
+        #         f"z<thr?={(self.base_height < self.cfg.termination.z_threshold).item()} "
+        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
@@ -1197,6 +1197,11 @@ class go2viper(LeggedRobot):
                                     # self.ee_goal_delta_orn_euler  # dim 3
                                     ),dim=-1)
         self.base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        foot_z_world = self.rigid_body_state[:, self.feet_indices, 2]
+        # print("foot_z_world",foot_z_world)
+        # print(self.root_states[:,2])
+        # self.foot_contacts_from_sensor = self.force_sensor_tensor.norm(dim=-1) > 1.5
+        # print('force: ', self.force_sensor_tensor.norm(dim=-1))
         # self.base_height = torch.mean(self.root_states[:, 2].unsqueeze(1))
         # print( self.base_height)
         # g_torques = self.get_g_torques()
@@ -1362,6 +1367,9 @@ class go2viper(LeggedRobot):
         sphere_pose = gymapi.Transform(gymapi.Vec3(0, 0, 0), r=None)
         gymutil.draw_lines(sphere_geom_origin, self.gym, self.viewer, self.envs[0], sphere_pose)
 
+        sphere_geom_6 = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(0, 0, 1))  # Blue
+        foot_z_world = self.rigid_body_state[:, 5, :3]
+
         N = 400
         l = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (N,1), device=self.device).squeeze(1)
         p = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (N,1), device=self.device).squeeze(1)
@@ -1394,6 +1402,9 @@ class go2viper(LeggedRobot):
 
             sphere_pose_5 = gymapi.Transform(gymapi.Vec3(base_height_no_z_offset[i, 0], base_height_no_z_offset[i, 1], base_height_no_z_offset[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom_5, self.gym, self.viewer, self.envs[i], sphere_pose_5) 
+
+            sphere_pose_6 = gymapi.Transform(gymapi.Vec3(foot_z_world[i, 0], foot_z_world[i, 1], foot_z_world[i, 2]), r=None)
+            gymutil.draw_lines(sphere_geom_6, self.gym, self.viewer, self.envs[i], sphere_pose_6) 
 
         
 
