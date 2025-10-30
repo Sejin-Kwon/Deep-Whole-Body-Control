@@ -383,7 +383,7 @@ class go2viper(LeggedRobot):
             sensor_idx = self.gym.create_asset_force_sensor(robot_asset, foot_idx, sensor_pose)
             self.sensor_indices.append(sensor_idx)
         
-        self.gripper_idx = self.body_names_to_idx["vx_ee_gripper_link"]
+        self.gripper_idx = self.body_names_to_idx["vx_ee_gripper_link"] # ('vx_ee_gripper_link', 24)
 
         # box
         if self.has_box:
@@ -585,12 +585,12 @@ class go2viper(LeggedRobot):
         # self.old_arm_actions = torch.zeros((self.num_envs, 6), device=self.device)
 
         # get gym GPU state tensors
-        actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
-        dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
-        net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
-        rigid_body_state_tensor = self.gym.acquire_rigid_body_state_tensor(self.sim)
-        mass_matrix_tensor = self.gym.acquire_mass_matrix_tensor(self.sim, "robot_dog")
-        jacobian_tensor = self.gym.acquire_jacobian_tensor(self.sim, "robot_dog")
+        actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim) # The buffer has shape (num_actors, 13). State for each actor root contains position([0:3]), rotation([3:7]), linear velocity([7:10]), and angular velocity([10:13])
+        dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim) # Buffer has shape (num_dofs, 2). Each DOF state contains position and velocity.
+        net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim) # The buffer has shape (num_rigid_bodies, 3). Each contact force state contains one value for each X, Y, Z axis.
+        rigid_body_state_tensor = self.gym.acquire_rigid_body_state_tensor(self.sim) # The buffer has shape (num_rigid_bodies, 13). State for each rigid body contains position([0:3]), rotation([3:7]), linear velocity([7:10]), and angular velocity([10:13])
+        mass_matrix_tensor = self.gym.acquire_mass_matrix_tensor(self.sim, "robot_dog") # Retrieves buffer for Mass matrix
+        jacobian_tensor = self.gym.acquire_jacobian_tensor(self.sim, "robot_dog") # Retrieves buffer information for Jacobian
         force_sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim)
 
         self.gym.refresh_dof_state_tensor(self.sim)
@@ -690,7 +690,7 @@ class go2viper(LeggedRobot):
         self.orn_error_scale = torch.tensor(self.cfg.goal_ee.orn_error_scale, device=self.device)
         self.arm_base_overhead = torch.tensor([0., 0., 0.165], device=self.device)
         # self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
-        self.z_invariant_offset = torch.tensor([0.53], device=self.device).repeat(self.num_envs, 1)
+        self.z_invariant_offset = torch.tensor([0.15], device=self.device).repeat(self.num_envs, 1)
 
         print('------------------------------------------------------')
         print(f'root_states shape: {self.root_states.shape}')
@@ -733,7 +733,7 @@ class go2viper(LeggedRobot):
         self.feet_air_time = torch.zeros(self.num_envs, self.feet_indices.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        # self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0
@@ -872,7 +872,8 @@ class go2viper(LeggedRobot):
         for key in self.episode_sums.keys():
             self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
             self.episode_sums[key][env_ids] = 0.
-        
+        # if self.cfg.terrain.curriculum:
+        #     self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
         # for key in self.episode_metric_sums.keys():
         #     self.extras["episode"]['metric_' + key] = torch.mean(self.episode_metric_sums[key][env_ids]) / self.max_episode_length_s
         #     self.episode_metric_sums[key][env_ids] = 0.
@@ -933,14 +934,25 @@ class go2viper(LeggedRobot):
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
         """
+
+        # original code
+        # max_vel = self.cfg.domain_rand.max_push_vel_xy
+        # self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device) # lin vel x/y
+        # self.root_states[:, 7:9] = torch.where(
+        #     self.commands.sum(dim=1).unsqueeze(-1) == 0,
+        #     self.root_states[:, 7:9] * 2.5,
+        #     self.root_states[:, 7:9]
+        # )
+        # self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self._root_states))
+
         max_vel = self.cfg.domain_rand.max_push_vel_xy
-        self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device) # lin vel x/y
-        self.root_states[:, 7:9] = torch.where(
-            self.commands.sum(dim=1).unsqueeze(-1) == 0,
-            self.root_states[:, 7:9] * 2.5,
-            self.root_states[:, 7:9]
-        )
-        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self._root_states))
+        push_vel = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device) # lin vel x/y
+        self.disturbance_force[:, 0:2] = push_vel
+        self.disturbance_force[:, 2]    = 0.0
+        self.root_states[:, 7:9] = push_vel
+        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
+
+
 
     def _update_terrain_curriculum(self, env_ids):
         """ Implements the game-inspired curriculum.
@@ -952,9 +964,9 @@ class go2viper(LeggedRobot):
         if not self.init_done:
             # don't change on initial reset
             return
-        distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
+        distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1) # l2 norm
         # robots that walked far enough progress to harder terains
-        move_up = distance > self.terrain.env_length / 2
+        move_up = distance > self.terrain.env_length / 2     # distance > 4 (m)
         # robots that walked less than half of their required distance go to simpler terrains
         move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
         self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
@@ -1047,7 +1059,7 @@ class go2viper(LeggedRobot):
         base_yaw = euler_from_quat(self.base_quat)[:,2]
         self.base_yaw_euler[:] = torch.cat([torch.zeros(self.num_envs, 2, device=self.device), base_yaw.view(-1, 1)], dim=1)
         self.base_yaw_quat[:] = quat_from_euler_xyz(torch.tensor(0), torch.tensor(0), base_yaw)
-        # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
 
         # update box obs
         # self.update_target_ee_base()
@@ -1090,7 +1102,7 @@ class go2viper(LeggedRobot):
 
         self.extras["metric"]["lin_vel_x_error_rmse"]= torch.sqrt(torch.mean(torch.square(self.commands[:, 0] - self.base_lin_vel[:, 0])))
         # self.extras["metric"]["lin_vel_y_error"]= torch.mean(torch.sqrt(torch.sum(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1]))))
-        self.extras["metric"]["ee_pos_error_cart_rmse"] = torch.sqrt(torch.mean(torch.sum((self.ee_pos - (quat_rotate(self.base_yaw_quat, sphere2cart(self.curr_ee_goal_sphere)) + torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)))**2, dim=1)))
+        self.extras["metric"]["ee_pos_error_cart_rmse"] = torch.sqrt(torch.mean(torch.sum((self.ee_pos - (quat_rotate(self.base_yaw_quat, sphere2cart(self.curr_ee_goal_sphere)) + torch.cat([self.root_states[:, :2], self.root_states[:, 2:3]+ self.z_invariant_offset], dim=1)))**2, dim=1)))
         self.extras["metric"]["lin_vel_y_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1])))
         self.extras["metric"]["ang_vel_error_rmse"] = torch.sqrt(torch.mean(torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])))
         self.extras["metric"]["lin_vel_x"] = torch.mean(self.base_lin_vel[:, 0])
@@ -1125,31 +1137,44 @@ class go2viper(LeggedRobot):
         r = euler[:, 0]                      
         p = euler[:, 1]
         y = euler[:, 2]
-        z = self.root_states[:, 2]
+        self.base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        z = self.base_height
 
-        r_threshold_buff = ((r > 1.9) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -1.9) & (self.curr_ee_goal[:, 2] <= 0))
-        p_threshold_buff = ((p > 1) & (self.curr_ee_goal[:, 1] >= 0)) | ((p < -1) & (self.curr_ee_goal[:, 1] <= 0))
+        # curr_ee_goal = [radius, yaw, pitch]
+        yaw_cmd   = self.curr_ee_goal[:, 1]  # yaw
+        pitch_cmd = self.curr_ee_goal[:, 2]  # pitch
+
+        # TODO: check curr_ee_goal condition.. why?
+        # r_threshold_buff = ((r > 1.5) & (self.curr_ee_goal[:, 2] >= 0)) | ((r < -1.5) & (self.curr_ee_goal[:, 2] <= 0))
+        # p_threshold_buff = ((p > 0.55) & (self.curr_ee_goal[:, 1] >= 0)) | ((p < -0.55) & (self.curr_ee_goal[:, 1] <= 0))
+        # r_threshold_buff = ((r > 1.5) & (yaw_cmd >= 0)) | ((r < -1.5) & (yaw_cmd <= 0))
+        # p_threshold_buff = ((p > 0.55) & (pitch_cmd >= 0)) | ((p < -0.55) & (pitch_cmd <= 0))
+        r_threshold_buff = (r > 1.75) | (r < -1.75)
+        p_threshold_buff = (p > 0.85)  | (p < -0.85) 
         z_threshold_buff = z < self.cfg.termination.z_threshold
         
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
 
         # print(self.base_quat)
-        # print(torch.stack([self.reset_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
-        # print('r: ', r[0].item())
-        # print('p: ', p[0].item())
-        # print('z: ', z[0].item())
-        # print('-----------------------------------------------------')
-        # # time.sleep(0.5)
+        # print(self.curr_ee_goal)
+        # ee_target_cart = sphere2cart(self.ee_goal_sphere[0, :])
+        # print(ee_target_cart)
+        print(torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff], dim=-1)[0])
+        print('r: ', r[0].item())
+        print('p: ', p[0].item())
+        print('z: ', z[0].item())
+        print('-----------------------------------------------------')
+        # time.sleep(0.5)
 
-        # self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
-        # if len(self.reset_triggers) > 0:
-        #     print('reset_triggers: ', self.reset_triggers)
+        self.reset_triggers = torch.stack([termination_contact_buf, r_threshold_buff, p_threshold_buff, z_threshold_buff, self.time_out_buf], dim=-1).nonzero(as_tuple=False)
+        if len(self.reset_triggers) > 0:
+            print('reset_triggers: ', self.reset_triggers)
 
-        # print(f"[dbg] step={self.common_step_counter} env0: "
-        #         f"z={self.root_states[0,2].item():.3f} "
-        #         f"z<thr?={(self.root_states[0,2] < self.cfg.termination.z_threshold).item()} "
-        #         f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
-        #         f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
+        print(f"[dbg] step={self.common_step_counter} env0: "
+                f"z={self.base_height.item():.3f} "
+                f"z<thr?={(self.base_height < self.cfg.termination.z_threshold).item()} "
+                f"r={(euler[0,0].item()):.3f} p={(euler[0,1].item()):.3f} "
+                f"r_trig={r_threshold_buff[0].item()} p_trig={p_threshold_buff[0].item()}")
 
         self.reset_buf = termination_contact_buf | r_threshold_buff | p_threshold_buff | z_threshold_buff | self.time_out_buf
         # self.reset_buf = termination_contact_buf | z_threshold_buff | self.time_out_buf
@@ -1168,19 +1193,26 @@ class go2viper(LeggedRobot):
                                     self.ig2raisim_wo_gripper(self.action_history_buf[:, -1]),  # dim 18
                                     self.ig2raisim_feet(self.get_foot_contacts()),  # dim 4
                                     self.commands[:, :3] * self.commands_scale,  # dim 3
-                                    self.curr_ee_goal,  # dim 3
-                                    self.ee_goal_delta_orn_euler  # dim 3
+                                    self.curr_ee_goal  # dim 3
+                                    # self.ee_goal_delta_orn_euler  # dim 3
                                     ),dim=-1)
-        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
-        # print("!!!!!!!!!! ",base_height)
+        self.base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        # self.base_height = torch.mean(self.root_states[:, 2].unsqueeze(1))
+        # print( self.base_height)
         # g_torques = self.get_g_torques()
         # arm_mm = self.get_arm_mm().reshape(self.num_envs, -1)
         # ee_jac = self.get_ee_jac().reshape(self.num_envs, -1)
+
         if self.cfg.domain_rand.observe_priv:
+            if self.cfg.terrain.measure_heights:
+                heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.) * self.obs_scales.height_measurements
             priv_buf = torch.cat((
                 self.mass_params_tensor,
                 self.friction_coeffs_tensor,
-                self.motor_strength - 1
+                self.motor_strength - 1,
+                self.base_lin_vel * self.obs_scales.lin_vel,
+                heights,
+                self.disturbance_force
             ), dim=-1)
             self.obs_buf = torch.cat([obs_buf, priv_buf, self.obs_history_buf.view(self.num_envs, -1)], dim=-1)
         
@@ -1309,13 +1341,19 @@ class go2viper(LeggedRobot):
         """
         # self.gym.refresh_rigid_body_state_tensor(self.sim)
         sphere_geom = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(1, 1, 0)) # Yellow
-        transformed_target_ee = torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart)
+        transformed_target_ee = torch.cat([self.root_states[:, :2], self.root_states[:, 2:3] + self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart)
 
         sphere_geom_3 = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(0, 1, 1)) # Cyan
-        upper_arm_pose = torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)
+        upper_arm_pose = torch.cat([self.root_states[:, :2],  self.z_invariant_offset], dim=1)
+        # print("!!!! self.z_invariant_offset",   self.z_invariant_offset)
 
         sphere_geom_4 = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(1, 0, 0)) # Red
-        upper_arm_pose_no_z_offset = torch.cat([self.root_states[:, :2], torch.zeros(self.num_envs,1, device=self.device)], dim=1)
+        upper_arm_pose_root_offset = torch.cat([self.root_states[:, :2], self.root_states[:, 2:3] + self.z_invariant_offset], dim=1)
+        # print("@@@@ upper_arm_pose_root_offset", upper_arm_pose_root_offset)
+
+        sphere_geom_5 = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(0, 1, 0)) # Green
+        base_height_no_z_offset = self.root_states[:, :3]
+        # print("!!!!self.root_states[:, :3] ", self.root_states[:, :3])
 
         sphere_geom_2 = gymutil.WireframeSphereGeometry(0.05, 4, 4, None, color=(0, 0, 1))  # Blue
         ee_pose = self.rigid_body_state[:, self.gripper_idx, :3]
@@ -1324,14 +1362,14 @@ class go2viper(LeggedRobot):
         sphere_pose = gymapi.Transform(gymapi.Vec3(0, 0, 0), r=None)
         gymutil.draw_lines(sphere_geom_origin, self.gym, self.viewer, self.envs[0], sphere_pose)
 
-        N = 300
+        N = 400
         l = torch_rand_float(self.goal_ee_l_ranges[0], self.goal_ee_l_ranges[1], (N,1), device=self.device).squeeze(1)
         p = torch_rand_float(self.goal_ee_p_ranges[0], self.goal_ee_p_ranges[1], (N,1), device=self.device).squeeze(1)
         y = torch_rand_float(self.goal_ee_y_ranges[0], self.goal_ee_y_ranges[1], (N,1), device=self.device).squeeze(1)
         sph = torch.stack([l,p,y], dim=-1)
         cart_local = sphere2cart(sph)
 
-        anchor = torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1)  # (num_envs,3)
+        anchor = torch.cat([self.root_states[:, :2], self.root_states[:, 2:3] + self.z_invariant_offset], dim=1)  # (num_envs,3)
         R_cart = quat_apply(self.base_yaw_quat, cart_local)  # base-yaw 따라가게
         # R_cart = cart_local  # world 고정으로 보고 싶으면 이 줄로
         pts_world = anchor[0] + R_cart  # env 0에 대해 시각화 (원하면 각 env마다)
@@ -1351,8 +1389,11 @@ class go2viper(LeggedRobot):
             sphere_pose_3 = gymapi.Transform(gymapi.Vec3(upper_arm_pose[i, 0], upper_arm_pose[i, 1], upper_arm_pose[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom_3, self.gym, self.viewer, self.envs[i], sphere_pose_3) 
 
-            sphere_pose_4 = gymapi.Transform(gymapi.Vec3(upper_arm_pose_no_z_offset[i, 0], upper_arm_pose_no_z_offset[i, 1], upper_arm_pose_no_z_offset[i, 2]), r=None)
+            sphere_pose_4 = gymapi.Transform(gymapi.Vec3(upper_arm_pose_root_offset[i, 0], upper_arm_pose_root_offset[i, 1], upper_arm_pose_root_offset[i, 2]), r=None)
             gymutil.draw_lines(sphere_geom_4, self.gym, self.viewer, self.envs[i], sphere_pose_4) 
+
+            sphere_pose_5 = gymapi.Transform(gymapi.Vec3(base_height_no_z_offset[i, 0], base_height_no_z_offset[i, 1], base_height_no_z_offset[i, 2]), r=None)
+            gymutil.draw_lines(sphere_geom_5, self.gym, self.viewer, self.envs[i], sphere_pose_5) 
 
         
 
@@ -1482,7 +1523,7 @@ class go2viper(LeggedRobot):
         ee_orn_normalized = self.ee_orn / torch.norm(self.ee_orn, dim=-1).unsqueeze(-1)
         orn_err = orientation_error(self.ee_orn_des, ee_orn_normalized)
 
-        pos_err = (torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart) - self.ee_pos)
+        pos_err = (torch.cat([self.root_states[:, :2],  self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart) - self.ee_pos)
         # pos_err = quat_rotate_inverse(self.base_quat, pos_err)
 
         dpose = torch.cat([pos_err, orn_err], -1)
@@ -1624,13 +1665,27 @@ class go2viper(LeggedRobot):
         # self.ee_goal_cart[env_ids, :] = sphere2cart(self.ee_goal_sphere[env_ids, :])
         # self.goal_timer[env_ids] = 0.0
 
-    def collision_check(self, env_ids):
+    # for lerp
+    def collision_check_origin(self, env_ids):
         ee_target_all_sphere = torch.lerp(self.ee_start_sphere[env_ids, ..., None], self.ee_goal_sphere[env_ids, ...,  None], self.collision_check_t).squeeze(-1)
         ee_target_cart = sphere2cart(torch.permute(ee_target_all_sphere, (2, 0, 1)).reshape(-1, 3)).reshape(self.num_collision_check_samples, -1, 3)
         collision_mask = torch.any(torch.logical_and(torch.all(ee_target_cart < self.collision_upper_limits, dim=-1), torch.all(ee_target_cart > self.collision_lower_limits, dim=-1)), dim=0)
         underground_mask = torch.any(ee_target_cart[..., 2] < self.underground_limit, dim=0)
         return collision_mask | underground_mask
-
+    
+    def collision_check(self, env_ids):
+        if len(env_ids) == 0:
+            return torch.zeros(0, dtype=torch.bool, device=self.device)
+        ee_target_cart = sphere2cart(self.ee_goal_sphere[env_ids, :])
+        inside_box = torch.logical_and(
+        torch.all(ee_target_cart < self.collision_upper_limits, dim=-1),  # x,y,z < upper
+        torch.all(ee_target_cart > self.collision_lower_limits, dim=-1),  # x,y,z > lower
+        )
+        not_underground = ee_target_cart[:, 2] >= self.underground_limit
+        ok_mask = torch.logical_and(inside_box, not_underground)
+        # print(ee_target_cart[:, 2])
+        # print(ok_mask)
+        return ok_mask
     # def update_curr_ee_goal(self):
     #     t = torch.clip(self.goal_timer / self.traj_timesteps, 0, 1)
     #     self.curr_ee_goal_sphere[:] = torch.lerp(self.ee_start_sphere, self.ee_goal_sphere, t[:, None])
@@ -1674,17 +1729,16 @@ class go2viper(LeggedRobot):
         self.curr_ee_goal_cart[env_ids, :] = self.ee_goal_cart[env_ids, :]
         self.curr_ee_goal_sphere[env_ids, :] = self.ee_goal_sphere[env_ids, :]
 
-
-    def _reward_tracking_ee_sphere(self):
-        ee_pos_local = quat_rotate_inverse(self.base_yaw_quat, self.ee_pos - torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1))
+    def _reward_tracking_ee_sphere(self): # MAE error, compare in local frame
+        ee_pos_local = quat_rotate_inverse(self.base_yaw_quat, self.ee_pos - torch.cat([self.root_states[:, :2], self.root_states[:, 2:3] + self.z_invariant_offset], dim=1))
 
         ee_pos_error = torch.sum(torch.abs(cart2sphere(ee_pos_local) - self.curr_ee_goal_sphere) * self.sphere_error_scale, dim=1)
 
         # self.episode_metric_sums['tracking_ee_sphere'] += ee_pos_error
         return torch.exp(-ee_pos_error/self.cfg.rewards.tracking_ee_sigma)
 
-    def _reward_tracking_ee_cart(self):
-        target_ee = torch.cat([self.root_states[:, :2], self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart)
+    def _reward_tracking_ee_cart(self): # MAE error, compare in world frame
+        target_ee = torch.cat([self.root_states[:, :2], self.root_states[:, 2:3] + self.z_invariant_offset], dim=1) + quat_apply(self.base_yaw_quat, self.curr_ee_goal_cart)
 
         ee_pos_error = torch.sum(torch.abs(self.ee_pos - target_ee), dim=1)
 
@@ -1857,6 +1911,26 @@ class go2viper(LeggedRobot):
         return torch.sum(out_of_limits, dim=1)
     
     def _reward_power_distribution(self):
-        pow = self.torques * self.dof_vel  
+        # pow = self.torques * self.dof_vel 
+        pow = self.torques[:, :12] * self.dof_vel[:, :12]  ## fixed this for just leg power distribution term 
         var_pow = torch.var(pow, dim=1, unbiased=False)    
         return torch.square(var_pow)        # var(τ·θ̇)^2
+
+    def _reward_foot_slip(self):
+        contact_mask = (self.force_sensor_tensor.norm(dim=-1) > 1.5)
+        foot_v_xy = self.rigid_body_state[:, self.feet_indices, 7:9]
+        vxy_sq = (foot_v_xy ** 2).sum(dim=-1)
+        slip_term = contact_mask * vxy_sq
+        return slip_term.sum(dim=1)
+
+    def _reward_foot_clearance(self):
+        foot_z_world = self.rigid_body_state[:, self.feet_indices, 2]
+        wp_des = self.cfg.rewards.foot_clearance_target
+        foot_v_xy = self.rigid_body_state[:, self.feet_indices, 7:9]
+        vxy = torch.sqrt(torch.clamp((foot_v_xy ** 2).sum(dim=-1), min=1e-8))
+        vxy_sqrt = torch.sqrt(vxy)
+        contact_mask = (self.force_sensor_tensor.norm(dim=-1) > 1.5)
+        swing_mask = (~contact_mask)
+        err_sq = (foot_z_world - wp_des) ** 2
+        cl_term = err_sq * vxy_sqrt * swing_mask
+        return cl_term.sum(dim=1)

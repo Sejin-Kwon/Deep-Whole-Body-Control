@@ -68,6 +68,7 @@ class BaseTask():
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
+        self.disturbance_force = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
         self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.arm_rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)

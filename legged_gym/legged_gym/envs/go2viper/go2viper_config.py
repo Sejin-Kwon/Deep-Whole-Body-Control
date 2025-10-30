@@ -54,7 +54,8 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         collision_upper_limits = [0.3, 0.15, 0.05 - 0.165]
         collision_lower_limits = [-0.2, -0.15, -0.35 - 0.165]
         # underground_limit = -0.57
-        underground_limit = 0.5
+        # underground_limit = 0.5
+        underground_limit = -0.5
         num_collision_check_samples = 10
         command_mode = 'sphere'
 
@@ -62,8 +63,11 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         l_schedule = [0, 10000]
         p_schedule = [0, 10000]
         y_schedule = [0, 10000]
+        # l_schedule = [0, 1]
+        # p_schedule = [0, 1]
+        # y_schedule = [0, 1]
         # arm_action_scale_schedule = [0, 1]
-        tracking_ee_reward_schedule = [10000, 20000]
+        tracking_ee_reward_schedule = [0, 1] # [10000, 20000]
         
         class ranges:
             # original range => yaw and pitch are reversed 
@@ -120,7 +124,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
     class normalization:
         class obs_scales:
             lin_vel = 1.0
-            ang_vel =  1.0
+            ang_vel = 1.0
             dof_pos = 1.0
             dof_vel = 0.05
             height_measurements = 5.0
@@ -133,8 +137,8 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         num_torques = 12 + 6
         action_delay = 2  # -1 for no delay
         # num_dofs = 19
-        num_proprio = 2 + 3 + 20 + 20 + 18 + 4 + 3 + 3 + 3 
-        num_priv = 5 + 1 + 18
+        num_proprio = 2 + 3 + 20 + 20 + 18 + 4 + 3 + 3        # 2 + 3 + 20 + 20 + 18 + 4 + 3 + 3 + 3, removed last term(self.ee_goal_delta_orn_euler)
+        num_priv = 5 + 1 + 18 + 3 + 187 + 3 # add base_lin_vel, terrain heights and disturbace force
         history_len = 10
         num_observations = num_proprio * (history_len+1) + num_priv
 
@@ -177,11 +181,12 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # PD Drive parameters:
         # Kp = [ 5.1876, 5.1876, 3.4584, 0.1729, 1.7292, 0.1729]
         # Kd = [ 0.4323, 0.4323, 0.0865, 0,      0.0864, 0]
-        stiffness = {'joint': 50, 'vx': 25}  # [N*m/rad]
+        stiffness = {'joint': 50, 'vx': 20}  # [N*m/rad]
         damping = {'joint': 1, 'vx': 0.6}     # [N*m*s/rad]
         adaptive_arm_gains = False
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0, 0, 0]
+        # action_scale = [0.4, 0.45, 0.45] * 2 + [0.4, 0.45, 0.45] * 2 + [2.1, 0.6, 0.6, 0.6, 0.6, 0.6]
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
         torque_supervision = False
@@ -268,7 +273,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             dof_vel = -0.
             dof_acc = -2.5e-7 #last: -2.5e-7/2 
             base_height = -0.05 #last: -0.
-            feet_air_time = 1.0   #last: 2.0
+            feet_air_time = 2.0   #last: 2.0
             collision = -1.
             stumble = -0. 
             action_rate = -0.01
@@ -291,8 +296,8 @@ class go2viperRoughCfg( LeggedRobotCfg ):
 
         class arm_scales:
             termination = -1.0
-            tracking_ee_sphere = 0.55 #0.30
-            tracking_ee_cart = 0.55
+            tracking_ee_sphere = 0.7 #0.30
+            tracking_ee_cart = 0.7
             arm_orientation = -0.
             arm_energy_abs_sum = -0.0040
             tracking_ee_orn = 0.
@@ -304,7 +309,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         soft_dof_pos_limit = 0.9 # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.
-        base_height_target = 0.25
+        base_height_target = 0.27
         max_contact_force = 100. # forces above this value are penalized
 
     '''  before 10.13 fine tuning 
@@ -420,7 +425,10 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         # r_threshold = 0.78
         # p_threshold = 0.60
         # z_threshold = 0.325 
-        z_threshold = 0.372
+
+        z_threshold = 0.16
+        # for only_root_state
+        # z_threshold = 0.372
 
     class terrain:
         
