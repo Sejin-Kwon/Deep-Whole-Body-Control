@@ -158,24 +158,24 @@ def play(args):
         # print(actions)
         if i % 50 == 0:
             a = actions[0].detach().cpu().numpy()
-            print("[dbg] act[0] abs-mean:", float(np.mean(np.abs(a))),"leg-max:", float(np.max(np.abs(a[:12]))))
+            # print("[dbg] act[0] abs-mean:", float(np.mean(np.abs(a))),"leg-max:", float(np.max(np.abs(a[:12]))))
 
         obs, _, rews, arm_rews, dones, infos = env.step(actions.detach())
         # input()
         env.commands[:, 0] = 1.0
         env.commands[:, 1] = 0.0
         env.commands[:, 2] = 0.0
-        # env.curr_ee_goal_sphere[:, 0] = 0.4  # l
-        # env.curr_ee_goal_sphere[:, 1] = -0.5  # yaw
-        # env.curr_ee_goal_sphere[:, 2] = np.pi # pitch
-        env.ee_goal_sphere[:, 0] = 0.6
-        env.ee_goal_sphere[:, 1] = -0.2
-        env.ee_goal_sphere[:, 2] = 0.2
+        env.curr_ee_goal_sphere[:, 0] = 0.4  # l
+        env.curr_ee_goal_sphere[:, 1] = -0.5  # yaw
+        env.curr_ee_goal_sphere[:, 2] = np.pi # pitch
+        # env.ee_goal_sphere[:, 0] = 0.6
+        # env.ee_goal_sphere[:, 1] = -0.2
+        # env.ee_goal_sphere[:, 2] = 0.2
         # env.commands[:, 0] = 0.9   # x 전진 m/s
         # env.commands[:, 2] = 0.3   # yaw rad/s
         if i % 50 == 0:
             command_detached = env.commands[0].detach().cpu().numpy()
-            print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')
+            # print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')
             curr_ee_goal_cmd = env.curr_ee_goal_sphere[0].detach().cpu().numpy()
             print('curr_ee_goal: ' , f'{curr_ee_goal_cmd[0]:.2f}', f'{curr_ee_goal_cmd[1]:.2f}', f'{curr_ee_goal_cmd[2]:.2f}')
             # command_detached_lin_ang = env.commands[:,].detach().cpu().numpy()
@@ -192,23 +192,23 @@ def play(args):
             print("[dbg] act[0] :", a)
 
 
-            if hasattr(env, "dof_targets") and hasattr(env, "default_dof_pos"):
-                d = (env.dof_targets[0,:12] - env.default_dof_pos[:12]).abs().max().item()
-                print("[dbg] Δtarget_max_leg:", d)
+            # if hasattr(env, "dof_targets") and hasattr(env, "default_dof_pos"):
+            #     d = (env.dof_targets[0,:12] - env.default_dof_pos[:12]).abs().max().item()
+            #     print("[dbg] Δtarget_max_leg:", d)
 
-            if hasattr(env, "torques"):
-                print("[dbg] τ_max_leg:", float(env.torques[0,:12].abs().max()))
-                print("[dbg] τ:", env.torques[0])
+            # if hasattr(env, "torques"):
+            #     print("[dbg] τ_max_leg:", float(env.torques[0,:12].abs().max()))
+            #     print("[dbg] τ:", env.torques[0])
 
             props = env.gym.get_actor_dof_properties(env.envs[0], env.actor_handles[0])
-            print("[dbg] driveMode uniq:", np.unique(props['driveMode']))
-            print("[dbg] kp",props['stiffness'])
-            print("[dbg] ks",props['damping'])
-            print("[dbg] kp min/max:", float(props['stiffness'].min()), float(props['stiffness'].max()))
-            print("[dbg] kd min/max:", float(props['damping'].min()), float(props['damping'].max()))
-            print("[dbg] effort min/max:", float(props["effort"].min()), float(props["effort"].max()))
-            print("[dbg] hasLimits any?:", bool(props["hasLimits"].any()))
-            print("[dbg] lower/upper sample:", props["lower"][:6], props["upper"][:6])
+            # print("[dbg] driveMode uniq:", np.unique(props['driveMode']))
+            # print("[dbg] kp",props['stiffness'])
+            # print("[dbg] ks",props['damping'])
+            # print("[dbg] kp min/max:", float(props['stiffness'].min()), float(props['stiffness'].max()))
+            # print("[dbg] kd min/max:", float(props['damping'].min()), float(props['damping'].max()))
+            # print("[dbg] effort min/max:", float(props["effort"].min()), float(props["effort"].max()))
+            # print("[dbg] hasLimits any?:", bool(props["hasLimits"].any()))
+            # print("[dbg] lower/upper sample:", props["lower"][:6], props["upper"][:6])
 
         if i % 10 == 0:
             pass

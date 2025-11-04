@@ -134,13 +134,13 @@ def play(args):
         env.commands[:,0]= 1.0
         env.commands[:,1] = 0
         env.commands[:,2] = 0
-        # env.ee_goal_sphere[:, 0] = 0.4
-        # env.ee_goal_sphere[:, 1] = -0.2
-        # env.ee_goal_sphere[:, 2] = -0.2
-        env.ee_goal_sphere[:, 0] = 0.6
-        env.ee_goal_sphere[:, 1] = 0.2
-        env.ee_goal_sphere[:, 2] = 1.8
-        print(env.base_height)
+        env.ee_goal_sphere[:, 0] = 0.4
+        env.ee_goal_sphere[:, 1] = 1
+        env.ee_goal_sphere[:, 2] = -0.2
+        # env.ee_goal_sphere[:, 0] = 0.6
+        # env.ee_goal_sphere[:, 1] = 0.2
+        # env.ee_goal_sphere[:, 2] = -1.8
+        # print(env.base_height)
         if i % 50 == 0:
             command_detached = env.commands[0].detach().cpu().numpy()
             print('command: ', f'{command_detached[0]:.2f}', f'{command_detached[2]:.2f}')

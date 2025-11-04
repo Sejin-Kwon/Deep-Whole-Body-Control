@@ -273,7 +273,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             dof_vel = -0.
             dof_acc = -2.5e-7 #last: -2.5e-7/2 
             base_height = -0.05 #last: -0.
-            feet_air_time = 2.0   #last: 2.0
+            feet_air_time = 0.18  #last: 2.0
             collision = -1.
             stumble = -0. 
             action_rate = -0.01
@@ -294,6 +294,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             dof_pos_limits = -10.0
             power_distribution = -0.00000001  #last: -0.0000001 
             foot_clearance = -10.0
+            foot_slip = -0.048
 
         class arm_scales:
             termination = -1.0
@@ -312,7 +313,7 @@ class go2viperRoughCfg( LeggedRobotCfg ):
         soft_torque_limit = 1.
         base_height_target = 0.27
         max_contact_force = 100. # forces above this value are penalized
-        foot_clearance_target = 0.30  # origin pos_z is 0.2080 => relatively desired foot height is 0.092 
+        foot_clearance_target = 0.29  # origin pos_z is 0.2080 => relatively desired foot height is 0.082 
 
     '''  before 10.13 fine tuning 
     class rewards:
@@ -487,8 +488,8 @@ class go2viperRoughCfg( LeggedRobotCfg ):
             num_rows= 5 # number of terrain rows (levels)
             num_cols = 5 # number of terrain cols (types)
             #### training mode 
-            num_rows= 10 # number of terrain rows (levels)
-            num_cols = 20 # number of terrain cols (types)
+            # num_rows= 10 # number of terrain rows (levels)
+            # num_cols = 20 # number of terrain cols (types)
             ####
             # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
             terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
